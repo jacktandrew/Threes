@@ -1,0 +1,43 @@
+# ante up!
+# 
+# if first player has dice remaining....
+# first player rolls > selects dice
+#   first player can?
+#   
+#   if first player has money in his purse
+#   (1) bets an ammount of money > second player turn to bet 
+# 
+#         second player can?
+#         (1) fold > start over
+#         
+#         if second player has money in his purse
+#         (2) raise_ > first player turn to bets
+#               
+#               first player can?
+#               (1) fold > start over
+#               (2) call > second player turn to roll
+#                   
+#         (3) call > second player turn to roll
+# 
+#   (2) pass on betting  
+#   
+#   if second player has dice remaining...
+#   second player rolls > selects dice 
+#       second player can?
+# 
+#       if second player has money in his purse
+#       (1) bets an ammount of money > first player turn to bet 
+# 
+#             first player can?
+#             (1) fold > start over
+#             
+#             if first player has money in his purse
+#             (2) raise_ > second player turn to bets
+# 
+#                   second player can?
+#                   (1) fold > start over
+#                   (2) call > first player turn to roll
+# 
+#             (3) call > first player turn to roll
+# 
+#       (2) pass on betting > first player rolls
