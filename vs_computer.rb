@@ -334,8 +334,13 @@ the ABC's are not goin' to cut it"
   end
 
   def report_choices(p_num)
-    puts "\n", " \s You, Player #{p_num} kept #{@keepers}, \
+    if p_num == 1 || p_num == 2
+      puts "\n", " \s You, Player #{p_num} kept #{@keepers}, \
 making your total #{@tally}."
+    elsif p_num == 0
+      puts "\n", " \s The computer kept #{@keepers}, \
+making its total #{@tally}."
+    end      
     @remaining = 5 - @keepers.length
     bet_once_after_last_dice = 0
     if @remaining == 0 && bet_once_after_last_dice == 0
@@ -350,9 +355,7 @@ making your total #{@tally}."
   end
 
   def report_computer_choices(p_num)
-    puts "\n", " \s The computer kept #{@keepers}, \
-making its total #{@tally}."
-    @remaining = 5 - @keepers.length
+        @remaining = 5 - @keepers.length
     bet_once_after_last_dice = 0
     if @remaining == 0 && bet_once_after_last_dice == 0
       puts "\n", " \s That was the Computer's  last dice!"
@@ -414,7 +417,9 @@ number isn't going to fly..."
 #{input.upcase}! Give me a break..."
         get_first_bet(p_num)
       end
-      process_bet(p_num)
+      @purse -= @bet
+      $pot += @bet
+      $the_bet = @bet
     end
   end
 
@@ -436,15 +441,6 @@ number isn't going to fly..."
       puts "\n", "The Computer bet #{@bet}", "\n"
     end
     
-  end
-  
-  def process_bet(p_num)
-    if @purse > 0
-      @purse -= @bet
-      $pot += @bet
-      $the_bet = @bet
-    elsif @purse == 0
-    end
   end
 
   def call_or_raise(p_num)
@@ -692,7 +688,7 @@ def vs_computer_game()
   @first_player = DiceGame.new
   @first_player.purse(1)
   @computer = DiceGame.new
-  @computer.purse(2)
+  @computer.purse(0)
   
   $pot = 0
   $the_bet = 0
@@ -716,10 +712,10 @@ def vs_computer_game()
     break if $remainingP1 == 0 && $remainingP2 == 0
     break if $remainingP1 == 0 && $tallyP1 < $tallyP2
     break if $remainingP2 == 0 && $tallyP1 > $tallyP2
-    @computer.check_for_a_winner(2)
+    @computer.check_for_a_winner(0)
     # @second_player.get_first_bet(2)
     @first_player.call_or_raise(1)
-    @computer.computer_fold_or_call(2)  
+    @computer.computer_fold_or_call(0)  
   end
 end
 
