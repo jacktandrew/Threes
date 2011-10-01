@@ -29,24 +29,40 @@ INFO
     @keepers = []
     @remaining = 5 - @keepers.length
     @tally = 0
-    bet_once_after_last_dice = 0
+    @bet_once_after_last_dice = 0
+    $the_bet = 0
+    $remainingP1 = 5
+    $remainingP2 = 5
+    $tallyP1 = 0
+    $tallyP2 = 0
+    $ratioCPU = 10
   end
 
   def roll(p_num, p_name)
+    puts "You've got #{@purse} left in your purse" 
+    
     @remaining = 5 - @keepers.length
     if @remaining == 0
       check_for_a_winner(p_num, p_name)
-      puts " \s #{p_name}, it looks like you've picked all five so you're done rolling"
-    elsif @remaining == 1
-      puts "\n", "#{p_name}, it's your last roll make \
-it a good one!  ---  Hit (ENTER) to Roll"
-      STDIN.gets
-      $val = []
-      r = rand(6) + 1
-      $val.push(r)
-      show(p_num, p_name)
-    elsif @remaining > 1
-      puts "\n", "#{p_name} Hit (ENTER) to Roll"
+      if p_num < 4
+        puts " \s #{p_name}, it looks like you've picked all five so you're done rolling"
+      elsif p_num == 4
+        puts "The Computer, picked all five so its done rolling"
+      end
+    elsif @remaining >= 1
+      if @remaining == 1
+        if p_num < 4
+          puts "\n", "#{p_name}, it's your last roll make it a good one!  ---  Hit (ENTER) to Roll"
+        elsif p_num == 4
+          puts "\n", "Hit <ENTER> to let the computer take its last turn"
+        end
+      elsif @remaining > 1
+        if p_num < 4
+          puts "\n", "#{p_name} Hit <ENTER> to Roll" 
+        elsif p_num == 4
+          puts "\n", "Hit <ENTER> to let the computer take its turn"
+        end
+      end
       STDIN.gets
       $val = []
       @remaining = 5 - @keepers.length
@@ -55,25 +71,6 @@ it a good one!  ---  Hit (ENTER) to Roll"
         $val.push(r)
       end
       show(p_num, p_name)    
-    end
-  end
-
-  def computer_roll(p_num, p_name)
-    puts "#{p_name}, Hit <ENTER> to let the computer take its turn"
-    STDIN.gets
-    
-    @remaining = 5 - @keepers.length
-    if @remaining == 0
-      check_for_a_winner(p_num, p_name)
-      puts "The Computer, picked all five so its done rolling"
-    elsif @remaining > 1
-      $val = []
-      @remaining = 5 - @keepers.length
-      while $val.length < @remaining
-        r = rand(6) + 1
-        $val.push(r)
-      end
-      computer_show(p_num, p_name)    
     end
   end
 
@@ -150,75 +147,6 @@ ONE
     end
   end
 
-#   def computer_show(p_num, p_name)
-#     num = 1
-#     $val.each do |v|
-#     six = <<SIX
-#                              _______
-#                             |  o  o |
-#                          #{num}. |  o  o |
-#                             |  o  o |
-#                             |_______|
-# SIX
-# 
-#       five = <<FIVE
-#                          _______
-#                         | o   o |
-#                      #{num}. |   o   |
-#                         | o   o |
-#                         |_______|
-# FIVE
-# 
-#       four = <<FOUR                                    
-#                      _______
-#                     | o   o |
-#                  #{num}. |       |
-#                     | o   o |
-#                     |_______|
-# FOUR
-# 
-#       three = <<THREE
-#       _______
-#      | o     |
-#   #{num}. |   o   |
-#      |     o |
-#      |_______|
-# THREE
-# 
-#       two = <<TWO
-#                _______
-#               | o     |
-#            #{num}. |       |
-#               |     o |
-#               |_______|
-# TWO
-# 
-#       one = <<ONE
-#            _______
-#           |       |
-#        #{num}. |   o   |
-#           |       |
-#           |_______|
-# ONE
-# 
-#       num += 1
-#       if v == 1
-#         puts one
-#       elsif v == 2
-#         puts two
-#       elsif v == 3
-#         puts three
-#       elsif v == 4
-#         puts four
-#       elsif v == 5
-#         puts five
-#       elsif v == 6
-#         puts six
-#       end
-#     end
-#     computer_pick(p_num, p_name)
-#   end    
-# 
   def pick(p_num, p_name)
     print "\n", "Which ones do you wanna keep? "
     input = nil
@@ -233,13 +161,11 @@ ONE
     elsif input == 'intro'
       intro()
     elsif input.empty?
-      puts "You may not like your choices but \
-you've got to pick something"
+      puts "You may not like your choices but you've got to pick something"
       input = nil
       pick(p_num, p_name)
     elsif input.to_i == 0
-      puts "The choices go 1-5! Symbols or \
-the ABC's are not goin' to cut it"
+      puts "The choices go 1-5! Symbols or the ABC's are not goin' to cut it"
       input = nil
       pick(p_num, p_name)
     else
@@ -280,6 +206,9 @@ the ABC's are not goin' to cut it"
         end
       end
     end
+    @remaining = 5 - @keepers.length
+    $ratioP1 = @remaining + @tally * 2
+    report_choices(p_num, p_name)
   end
 
   def computer_pick(p_num, p_name)
@@ -329,138 +258,208 @@ the ABC's are not goin' to cut it"
         end
       end
     end
+    @remaining = 5 - @keepers.length
+    $ratioCPU = @remaining + @tally * 2
+    report_choices(p_num, p_name)
   end
     
   def report_choices(p_num, p_name)
-    puts "\n", " \s #{p_name}, you kept #{@keepers}, \
-making your total #{@tally}."
     @remaining = 5 - @keepers.length
-    bet_once_after_last_dice = 0
-    
-    if @remaining == 0 && bet_once_after_last_dice == 0
-      puts "\n", " \s That was your last dice!"
-      bet_once_after_last_dice += 1
+
+    if p_num < 4 && @bet_once_after_last_dice == 0
+      puts " \s #{p_name}, you kept #{@keepers}, making your total #{@tally}."
+    elsif p_num == 4 && @bet_once_after_last_dice == 0
+      puts " \s The Computer kept #{@keepers}, making its total #{@tally}."
+    end
+
+    if @remaining == 0 && @bet_once_after_last_dice >= 1
+      @bet = 0
+      $the_bet = 0
+    elsif @remaining == 0 && @bet_once_after_last_dice == 0
+      puts " \s That was the last dice!"
     end
     
-    if $remainingP1 == 0 || $remainingP2 == 0
+    if @remaining == 0
       check_for_a_winner(p_num, p_name)
     end
     
-    get_first_bet(p_num, p_name) 
-  
+    if p_num == 1 || p_num == 3
+      $purseP1 = @purse
+      $tallyP1 = @tally
+      $remainingP1 = 5 - @keepers.length
+    elsif p_num == 2 || p_num == 4
+      $purseP2 = @purse
+      $tallyP2 = @tally
+      $remainingP2 = 5 - @keepers.length
+    end
   end
 
-  def computer_report_choices(p_num, p_name)
-    puts "def computer_report_choices(p_num, p_name)"
+  def get_betting_input(p_num, p_name)
+    @bet = ""
+    input = gets.chomp
+    @bet = input.to_i
+    if input == 'quit'
+      quit(p_num, p_name)
+    elsif input == 'fold'
+      fold(p_num, p_name)
+    elsif input == 'intro'
+      intro()
+      get_betting_input(p_num, p_name)
+    elsif input.empty?
+      puts " \s You can bet 0 if you'd like but you've got to enter something..."
+      get_betting_input(p_num, p_name)
+    elsif @bet == @purse
+      puts " \s DAMN! all in, you don't mess around"
+    elsif @bet > @purse
+      puts " \s No way pal, you've only got #{@purse} left"
+      get_betting_input(p_num, p_name)
+    elsif @bet > $purseP1 || @bet > $purseP2  
+      puts " \s That's more than your opponent has left, are you just trying to humiliate him?"
+      get_betting_input(p_num, p_name)
+    elsif @bet < 0
+      puts " \s Betting a negative number isn't going to fly..."
+      get_betting_input(p_num, p_name)
+    elsif @bet < $the_bet
+      puts " \s #{input}! That's not enough to keep you in the game"
+      get_betting_input(p_num, p_name)
+    elsif input.length == 0
+      puts " \s Nothing?!?, you can 'fold' or 'quit' but you've got to put something"
+      get_betting_input(p_num, p_name)
     
-    puts "\n", " \s The Computer kept #{@keepers}, \
-making its total #{@tally}."
-    @remaining = 5 - @keepers.length
-    bet_once_after_last_dice = 0
-    if @remaining == 0 && bet_once_after_last_dice == 0
-      puts "\n", " \s That was the Computer's  last dice!"
-      bet_once_after_last_dice += 1
     end
+  end
 
-    if $remainingP1 == 0 || $remainingP2 == 0
-      check_for_a_winner(p_num, p_name)
+  def remarks_for_raising(p_num)
+    random = rand(5)
+    if random == 0
+      puts " \s Ok, that's a solid bet"
+    elsif random == 1
+      puts " \s That's what I like to see!"
+    elsif random == 2
+      puts " \s Keeping the game moving, good work"
+    elsif random == 3
+      puts " \s Keeping the pressure on, nice"
+    elsif random == 4
+      puts " \s This isn't your first rodeo"
+    end        
+  end
+
+  def remarks_for_calling(p_num)
+    random = rand(4)
+    if random == 0
+      puts " \s Ok, that's all you need to stay in"
+    elsif random == 1
+      puts " \s Conservative play but your hanging in"
+    elsif random == 2
+      puts " \s I see your not scared off that easily"
+    elsif random == 3
+      puts " \s Glad to see you're still in the game"
     end
-    
-    computer_get_first_bet(p_num, p_name)
-    
   end
 
   def get_first_bet(p_num, p_name)
-    puts "   def get_first_bet(p_num, p_name)"
-    if @purse == 0
-      puts "\n", " \s Looks like your all in, so we'll skip betting"
-    elsif $purseP1 == 0 || $purseP2 == 0
-      puts "\n", " \s Looks like your opponent is all in, so we'll skip betting"
-    elsif @purse > 0
-      print "\n", "#{p_name}, you've got #{@purse} in your purse, what do wanna bet?  "
-      @bet = ""
-      input = gets.chomp
-      @bet = input.to_i
-      if input == 'quit'
-        quit(p_num, p_name)
-      elsif input == 'fold'
-        @input = input
-        check_for_a_winner(p_num, p_name)
-      elsif input == 'intro'
-        intro()
-        get_first_bet(p_num, p_name)
-      elsif input.empty?
-        puts "\n", " \s You can bet 0 if you'd like \
-but you've got to enter something..."
-        get_first_bet(p_num, p_name)\
-      elsif @bet == @purse
-        puts "\n", " \s DAMN! all in, you don't mess around"
-      elsif @bet > @purse
-        puts "\n", " \s No way pal, you've only got #{@purse} left"
-        get_first_bet(p_num, p_name)
-      elsif @bet > $purseP1 || @bet > $purseP2  
-        puts "\n", " \s That's more than your opponent has left, are you just trying to humiliate him?"
-        get_first_bet(p_num, p_name)
-      elsif @bet < 0
-        puts "\n", " \s Betting a negative \
-number isn't going to fly..."
-        get_first_bet(p_num, p_name)
-      elsif input == '0'
-        puts "\n", " \s Playing it safe I see..."
-      elsif @bet >= 1
-        random = rand(3)
-        if random == 0
-          puts "\n", " \s Ok, that's a solid bet"
-        elsif random == 1
-          puts "\n", " \s That's what I like to see!"
-        elsif random == 2
-          puts "\n", " \s Keeping the game moving, good work"
-        elsif random == 3
-          puts "\n", " \s #{p_name} keeping the pressure on, nice"
+    if @bet_once_after_last_dice == 0
+      if @purse == 0
+        puts " \s Looks like your all in, so we'll skip betting"
+      elsif $purseP1 == 0 || $purseP2 == 0
+        puts " \s Looks like your opponent is all in, so we'll skip betting"
+      elsif @purse > 0
+        print "\n", "#{p_name}, you've got #{@purse} in your purse, what do wanna bet?  "
+        
+        get_betting_input(p_num, p_name)
+        
+        if input == '0'
+          puts " \s Playing it safe I see..."
+        elsif @bet >= 1
+          remarks_for_raising(p_num)
+        else
+          puts " \s #{input.upcase}, you want to bet #{input.upcase}! Give me a break..."
+          get_first_bet(p_num, p_name)
+        end      
+        
+        @purse -= @bet
+        $pot += @bet
+        $the_bet = @bet
+        if @remaining == 0
+          @bet_once_after_last_dice +=1
         end
-      else
-        puts "\n", " \s #{input.upcase}, you want to bet \
-#{input.upcase}! Give me a break..."
-        get_first_bet(p_num, p_name)
       end
-      @purse -= @bet
-      $pot += @bet
-      $the_bet = @bet
+    elsif @bet_once_after_last_dice > 0
     end
   end
 
+  def computer_ahead()
+    if $ratioP1 - $ratioCPU >= 2.0  # Ahead by more than 2
+      if $purseP1 <= 7 || $purseP2 <= 7
+        if $purseP1 < $purseP2
+          @bet = $purseP1
+          puts "The computer is going for the throat!  It's putting you all in by betting #{@bet}"
+        elsif $purseP1 > $purseP2
+          @bet = $purseP2
+          puts "This is for the match people.....the Computer is ALL IN!!!!"
+        end
+      elsif $purseP1 > 7
+        @bet = $the_bet + 4 + rand(2)
+        puts "The computer thinks its got a edge on you... it put in #{@bet}"
+      end
+    elsif $ratioP1 - $ratioCPU < 2.0 # Ahead by less than 2
+      if $purseP1 <= 3
+        @bet = $purseP1
+        puts "The computer is going for the throat!  It's putting you all in by betting #{@bet}"
+      elsif $purseP1 >= 3
+        @bet = $the_bet + rand(2) + 1
+        puts "The computer thinks it's an even match... it put in #{@bet}"
+      end
+    end
+    @purse -= @bet
+    $pot += @bet
+    $the_bet = @bet - $the_bet
+    puts "pot = #{$pot}"
+    puts "$the_bet = #{$the_bet}"
+  end
+  
+  def computer_behind()
+    if $ratioCPU - $ratioP1 < 2.0
+      if $purseP1 <= 3
+        @bet = $purseP1
+        puts "The computer is going for the throat!  It's putting you all in by betting #{@bet} "
+      elsif $purseP1 >= 3
+        @bet = $the_bet
+        puts "The computer thinks it's an even match... it put in #{@bet}"
+      end
+    elsif $ratioCPU - $ratioP1 >= 2.0
+      @bet = $the_bet
+      if @bet == 0
+        puts "The computer thinks you have the edge... it's passing on betting"
+      elsif @bet > 0
+        @bet = $the_bet
+        puts "The computer thinks you have the edge... but it's hanging in by betting #{@bet}"
+      end
+    end
+  end
+
+  def computer_tied()
+    @bet = 0 + rand(3)
+    puts "The computer thinks it's an even match... it put in #{@bet}"
+  end
+
   def computer_get_first_bet(p_num, p_name)
-    puts "  def computer_get_first_bet(p_num, p_name)"
+    puts "\n"
     if @purse == 0
-      puts "\n", " \s Looks like your all in, so we'll skip betting"
+      puts " \s Looks like your all in, so we'll skip betting"
     elsif $purseP1 == 0 || $purseP2 == 0
-      puts "\n", " \s Looks like your opponent is all in, so we'll skip betting"
-    elsif @purse > 0
-      ratioP1 = ($remainingP1 * 1.5) + $tallyP1
-      ratioCPU = ($remainingP2 * 1.5) + $tallyP2
-      puts "player 1 ratio is #{ratioP1}"
-      puts "computer's ratio is #{ratioCPU}"
-      if ratioP1 > ratioCPU
-        if ratioP1 - ratioCPU >= 2.0
-          @bet = 5
-          puts "The computer thinks he's got a edge on you... it put in #{@bet}"
-        elsif ratioP1 - ratioCPU < 2.0
-          @bet = 1
-          puts "The computer thinks it's an even match... it put in #{@bet}"
-        end
-      elsif ratioP1 < ratioCPU 
-        if ratioCPU - ratioP1 < 2.0
-          @bet = 1
-          puts "The computer thinks it's an even match... it put in #{@bet}"
-        elsif ratioCPU - ratioP1 >= 2.0
-          @bet = 0
-          puts "The computer thinks you have the edge... it passed on betting"
-        end
+      puts " \s Looks like your opponent is all in, so we'll skip betting"
+    elsif @purse > 0      
+      if $ratioP1 > $ratioCPU
+        computer_ahead()
+      elsif $ratioP1 < $ratioCPU 
+        computer_behind()
+      else
+        computer_tied()
       end
       @purse -= @bet
       $pot += @bet
       $the_bet = @bet
-      puts "\n", "The Computer bet #{@bet}", "\n"
     end
     
   end
@@ -479,168 +478,98 @@ number isn't going to fly..."
   end
 
   def call_or_raise(p_num, p_name)
-    puts "def call_or_raise(p_num, p_name)"
     if $the_bet > 0
       @remaining = (5 - @keepers.length)
       print "#{p_name}, what are you in for?  "
-      input = gets.chomp.downcase
-      @bet = input.to_i
-      if input == 'quit'
-        quit(p_num, p_name)
-      elsif input == 'fold'
-        @input = input
-        check_for_a_winner(p_num, p_name)
-      elsif input == 'intro'
-        intro()
-        call_or_raise(p_num, p_name)
-      elsif @bet == @purse
+      
+      get_betting_input(p_num, p_name)
+      
+      if @bet > $the_bet
+        remarks_for_raising(p_num)
         @purse -= @bet
         $pot += @bet
-        $the_bet = @bet - $the_bet
-        puts "\n", " \s so it looks like you're all in, \
-I guess we'll just see where the dice land"
-      elsif @bet > @purse
-        puts "\n", " \s #{@bet}! No way pal, you've only got #{@purse} left"
-        call_or_raise(p_num, p_name)
-      elsif (@bet - $the_bet) > $purseP1 || (@bet -$the_bet) > $purseP2  
-        puts "\n", " \s That's more than your opponent has left, are you just trying to humiliate him?"
-        call_or_raise(p_num, p_name)
-      elsif @bet > $the_bet
-        @purse -= @bet
-        $pot += @bet
-        random = rand(4)
-        if random == 0
-          puts "\n", " \s Ok, that's a solid bet"
-        elsif random == 1
-          puts "\n", " \s That's what I like to see!"
-        elsif random == 2
-          puts "\n", " \s Keeping the game moving, good work"
-        elsif random == 3
-          puts "\n", " \s #{p_name} keeping the pressure on, nice"
-        elsif random == 4
-          puts "\n", " \s This isn't your first rodeo"
-        end
         $the_bet = @bet - $the_bet
       elsif @bet == $the_bet
+        remarks_for_calling(p_num)
         @purse -= @bet
         $pot += @bet
-        random = rand(3)
-        if random == 0
-          puts "\n", " \s Ok, that's all you need to stay in"
-        elsif random == 1
-          puts "\n", " \s Conservative play but your hanging in"
-        elsif random == 2
-          puts "\n", " \s I see your not scared off that easily"
-        elsif random == 3
-          puts "\n", " \s Glad to see you're still in the game"
-        end
         $the_bet = @bet - $the_bet
-      elsif input.length == 0
-        puts "\n", "Nothing?!?, you can 'fold' or 'quit' but you've got to put something"
-        call_or_raise(p_num, p_name)
-      elsif @bet < $the_bet
-        puts "\n", " \s #{input}! That's not enough to keep you in the game"
-        call_or_raise(p_num, p_name)
-      end 
+            end 
     end
   end 
 
   def computer_call_or_raise(p_num, p_name)
-    puts "  def computer_call_or_raise(p_num, p_name)"
-
-    ratioP1 = ($remainingP1 * 1.5) + $tallyP1
-    ratioCPU = ($remainingP2 * 1.5) + $tallyP2
-    puts "player 1 ratio is #{ratioP1}"
-    puts "computer's ratio is #{ratioCPU}"
-    if $the_bet == 0
-      puts "Skipping betting, that means it's the computer's turn"
-    elsif $the_bet > 0 && ratioP1 >= ratioCPU
-      if (ratioP1 - ratioCPU) >= 2.0
-        @bet = $the_bet + 5
-        puts "\n", "The Computer thinks it's got an edge, it puts in #{@bet} you'll need to put in 5 more to stay in", "\n"
-        @purse -= @bet
-        $pot += @bet
-        $the_bet = @bet - $the_bet
-      elsif (ratioP1 - ratioCPU) < 2.0
-        @bet = $the_bet
-        puts "\n", "The Computer called your bet of #{@bet}", "\n"
-        @purse -= @bet
-        $pot += @bet
-        $the_bet = @bet - $the_bet
+    if $the_bet > 0
+      puts "\n"
+      if $ratioCPU - $ratioP1 >= 7.0
+        fold(p_num, p_name)
+      elsif $the_bet > 0 && $ratioP1 >= $ratioCPU
+        computer_ahead()
+      elsif $the_bet > 0 && $ratioP1 < $ratioCPU 
+        computer_behind()
+      else
+        computer_tied()
       end
-    elsif $the_bet > 0 && ratioP1 < ratioCPU 
-      if (ratioCPU - ratioP1) <= 2.0
-        @bet = $the_bet
-        puts "\n", "The Computer called your bet of #{@bet}", "\n"
-        @purse -= @bet
-        $pot += @bet
-        $the_bet = @bet - $the_bet
-      elsif (ratioCPU - ratioP1) > 2.0
-        @input == 'fold'
-        check_for_a_winner(p_num, p_name)
-      end
-    end    
-    puts "purse = #{@purse}"
-    puts "bet = #{@bet}"
+      @purse -= @bet
+      $pot += @bet
+      $the_bet = @bet - $the_bet
+    end
   end
   
   def fold_or_call(p_num, p_name)
-    puts "  def fold_or_call(p_num, p_name)"
     if $the_bet > 0
       @remaining = (5 - @keepers.length)
       print "#{p_name}, will ya match his bet or 'fold'  ?  "
-      input = gets.chomp.downcase
-      @bet = input.to_i
-      if input == 'quit'
-        quit(p_num, p_name)
-      elsif input == 'fold'
-        @input = input
-        check_for_a_winner(p_num, p_name)
-      elsif input == 'intro'
-        intro()
-        fold_or_call(p_num, p_name)
-      elsif @bet > $the_bet
-        puts "\n", " \s Sorry, you already had your turn to raise"
+      # input = gets.chomp.downcase
+      #       @bet = input.to_i
+      #       
+      #       puts "\n"
+            
+      get_betting_input(p_num, p_name)
+      
+      # if input == 'quit'
+      #   quit(p_num, p_name)
+      # elsif input == 'fold'
+      #   fold(p_num, p_name)
+      # elsif input == 'intro'
+      #   intro()
+      #   fold_or_call(p_num, p_name)
+      if @bet > $the_bet
+        puts " \s Sorry, you already had your turn to raise"
         fold_or_call(p_num, p_name)
       elsif @bet == $the_bet  
         @purse -= @bet
         $pot += @bet
-        random = rand(3)
-        if random == 0
-          puts "\n", " \s Ok, that's all you need to stay in"
-        elsif random == 1
-          puts "\n", " \s Conservative play but your hanging in"
-        elsif random == 2
-          puts "\n", " \s I see your not scared off that easily"
-        elsif random == 3
-          puts "\n", " \s Glad to see you're still in the game"
-        end
+
+        # random = rand(3)
+        # if random == 0
+        #   puts " \s This isn't your first rodeo"
+        # elsif random == 1
+        #   puts " \s Oh damn, it's on!"
+        # elsif random == 2
+        #   puts " \s I see your not scared off that easily"
+        # elsif random == 3
+        #   puts " \s Glad to see you're still in the game"
+        # end
+
         $the_bet = @bet - $the_bet
       elsif input.length == 0
-        puts "\n", "Nothing?!?, you can 'fold' or 'quit' but you've got to put something"
+        puts " \s Nothing?!?, you can 'fold' or 'quit' but you've got to put something"
       elsif @bet < $the_bet
-        puts "\n", " \s #{input}! That's not enough to keep you in the game"
+        puts " \s #{input}! That's not enough to keep you in the game"
         fold_or_call(p_num, p_name)
       end
     end
   end
 
   def computer_fold_or_call(p_num, p_name)
+    puts "\n"
     if $the_bet > 0
-      puts "  def computer_fold_or_call(p_num, p_name)"
-      ratioP1 = ($remainingP1 * 1.5) + $tallyP1
-      ratioCPU = ($remainingP2 * 1.5) + $tallyP2
-      if ratioP1 > ratioCPU           # Player one is behind
+      if $ratioP1 > $ratioCPU || $ratioCPU - $ratioP1 < 7
         @bet = $the_bet
         puts "\n", "The Computer called your bet of #{@bet}", "\n"
-      elsif ratioP1 < ratioCPU        # Player one is ahead
-        if ratioCPU - ratioP1 >= 3    
-          @input == 'fold'
-          check_for_a_winner(p_num, p_name)
-        elsif ratioCPU - ratioP1 < 3
-          @bet = $the_bet
-          puts "\n", "The Computer called your bet of #{@bet}", "\n"
-        end
+      elsif $ratioCPU - $ratioP1 >= 7    
+        fold(p_num, p_name)
       end
       @purse -= @bet
       $pot += @bet
@@ -654,95 +583,103 @@ I guess we'll just see where the dice land"
     Process.exit!(0)
   end
 
-  def check_for_a_winner(p_num, p_name)
-    puts "  def check_for_a_winner(p_num, p_name)"
-  
-    if p_num == 1
-      $purseP1 = @purse
-    elsif p_num == 2
-      $purseP2 = @purse
-    end
-    
-    if @input == 'fold'
-      print "Leaving so soon? I guess this means............."
-      if p_num == 1
-        $purseP2 = @purse
-        $purseP2 += $pot
-        puts " \s #{$name2} you WON!!!!!"
-      elsif p_num == 2
-        $purseP1 = @purse
-        $purseP1 += $pot
-        puts " \s #{$name1} you WON!!!!!"
-      end
-      want_to_play_again()
-    elsif $tallyP1 == 30
-      puts " \s I do not believe this...... "
-      puts " \s #{$name1}, you 'Shot The MOON'......"
-      puts " \s and secured yourself the win! "
-      check_if_player2_is_bankrupt()
-    elsif $tallyP2 == 30
-      puts " \s I do not believe this...... "
-      puts " \s #{$name2}, you 'Shot The MOON'......"
-      puts " \s and secured yourself the win! "
-      check_if_player1_is_bankrupt()
-    elsif $remainingP1 == 0 && $remainingP2 == 0 && $tallyP1 == $tallyP2
-      puts " \s I do not believe this...... you TIED!!!!!"
-      puts " \s The money will stay in the pot for next time!"
-      want_to_play_again()
-    elsif $remainingP1 == 0 && $tallyP1 < $tallyP2
-      $purseP1 = @purse
-      $purseP1 += $pot
-      check_if_player2_is_bankrupt()
-    elsif $remainingP2 == 0 && $tallyP1 > $tallyP2
+  def fold(p_num, p_name)
+    print "Leaving so soon? I guess this means............."
+    if p_num == 1 || p_num == 3
       $purseP2 = @purse
       $purseP2 += $pot
-      check_if_player1_is_bankrupt()
+      puts " \s #{$name2} you WON!!!!!"
+    elsif p_num == 2 || p_num == 4
+      $purseP1 = @purse
+      $purseP1 += $pot
+      puts " \s #{$name1} you WON!!!!!"
+    end
+    want_to_play_again(p_num)
+  end
+
+  def check_for_a_winner(p_num, p_name)
+    puts "  def check_for_a_winner(p_num, p_name)"
+
+    if p_num == 1 || p_num == 3
+      $purseP1 = @purse
+      $tallyP1 = @tally
+      $remainingP1 = 5 - @keepers.length
+    elsif p_num == 2 || p_num == 4
+      $purseP2 = @purse
+      $tallyP2 = @tally
+      $remainingP2 = 5 - @keepers.length
+    end
+    puts "\t p_name = #{p_name}"
+    # puts "\t $remainingP1 #{$remainingP1}"
+    # puts "\t $remainingP2 #{$remainingP2} "
+    # puts "\t $tallyP1 #{$tallyP1}"
+    # puts "\t $tallyP2 #{$tallyP2}"
+    puts "\t the pot = #{$pot}"
+    puts "\t @purse = #{@purse}"
+    puts "\t $purseP1 = #{$purseP1}"
+    puts "\t $purseP2 = #{$purseP2}"
+    puts "\t player 1 ratio is #{$ratioP1}"
+    puts "\t computer's ratio is #{$ratioCPU}"
+        
+    
+    if @remaining == 0    
+      if @tally == 30
+        puts " \s I do not believe this...... "
+        puts " \s #{p_name}, you 'Shot The MOON'......"
+        puts " \s and secured yourself the win! "
+        check_if_bankrupt(p_num, p_name)
+      elsif $remainingP1 == 0 && $remainingP2 == 0 && $tallyP1 == $tallyP2
+        puts " \s I do not believe this...... you TIED!!!!!"
+        puts " \s The money will stay in the pot for next time!"
+        want_to_play_again(p_num)
+      elsif $remainingP1 == 0 && $tallyP1 < $tallyP2
+        $purseP1 = @purse
+        $purseP1 += $pot
+        check_if_bankrupt(p_num, $name1)
+      elsif $remainingP2 == 0 && $tallyP1 > $tallyP2
+        $purseP2 = @purse
+        $purseP2 += $pot
+        check_if_bankrupt(p_num, $name2)
+      end
     end
   end
   
-  def check_if_player2_is_bankrupt
+  def check_if_bankrupt(p_num, p_name)
     if @purse == 60 || @purse == 0
-      puts " \s #{$name1} you bankrupted your opponent and are the overall CHAMPION!"
+      puts " \s #{p_name} you bankrupted your opponent and are the overall CHAMPION!"
       Process.exit!(0)
     else
-      puts " \s #{$name1}........ you WON!!!!!"
-      puts " \s but #{$name2} still has enough money to continue"
-      want_to_play_again()
+      puts " \s #{p_name}........ you WON!!!!!"
+      puts " \s but the loser escaped to fight another day"
+      want_to_play_again(p_num)
     end
   end
   
-  def check_if_player1_is_bankrupt
-    if @purse == 60 || @purse == 0
-      puts " \s #{$name2} you bankrupted #{$name1} and are the overall CHAMPION!"
-      Process.exit!(0)
-    else
-      puts " \s #{$name2}........ you WON!!!!!"
-      puts " \s but #{$name1} still has enough money to continue"
-      want_to_play_again()
-    end
-  end
-  
-  def want_to_play_again
+  def want_to_play_again(p_num)
     puts "Want to play again? (y/n)"
     input = gets.chomp
-    if input == "y"
+    if input == "y" && p_num <= 2
       play_2_player_game()
+    elsif input == "y" && p_num >= 3
+      vs_computer_game()
     elsif input == "n"
       puts "Later!"
       Process.exit!(0)
     else
       puts "I didn't understand"
-      want_to_play_again()
+      want_to_play_again(p_num)
     end
   end
 end
 
 def get_mode()
   puts "Do you want to play (1) player or (2) player mode?"
-  input = gets.chomp
+  # input = gets.chomp
+  input = '1'
   if input == '1'
     puts "Type in your name(s) and you can join the game"
-    get_name_1()
+    # get_name_1()
+    $name2 = "Computer"
     vs_computer_game()
   elsif input == '2'
     get_name_1()
@@ -755,8 +692,6 @@ def get_mode()
   end
 end
 
-
-  
 def get_name_1()
   print "Player 1 > "
   $name1 = gets.chomp.capitalize
@@ -766,7 +701,6 @@ def get_name_1()
   else
   end
 end
-#  get_name_1()
 $name1 = "Jack"
 
 def get_name_2()
@@ -778,7 +712,6 @@ def get_name_2()
   else
   end
 end
-#  get_name_2()
 $name2 = "Andrew"
 
 def setup_purse()
@@ -836,32 +769,27 @@ def vs_computer_game()
   
   $pot = 0
   $the_bet = 0
-  $tallyP1 = 0
-  $tallyP2 = 0
-  $remainingP1 = 5
-  $remainingP2 = 5
   
   while true
-    @human.roll(3, $name1) # roll > show > pick
-    @human.report_choices(3, $name1) # report > get_first_bet
+    @human.roll(3, $name1) # roll > show > pick > report
+    @computer.check_for_a_winner(4, $name2)
+    @human.get_first_bet(3, $name1)
     break if $remainingP1 == 0 && $remainingP2 == 0
     break if $remainingP1 == 0 && $tallyP1 < $tallyP2
     break if $remainingP2 == 0 && $tallyP1 > $tallyP2
-    @computer.computer_call_or_raise(4, computer)  
+    @computer.computer_call_or_raise(4, $name2)  
     @human.fold_or_call(3, $name1)
-  
-    @computer.computer_roll(4, computer) # roll > show > pick
-    @computer.computer_report_choices(4, computer) # report > get_first_bet
+    
+    @computer.roll(4, $name2) # roll > show > pick >report
+    @human.check_for_a_winner(3, $name1)
+    @computer.computer_get_first_bet(4, $name2)
     break if $remainingP1 == 0 && $remainingP2 == 0
     break if $remainingP1 == 0 && $tallyP1 < $tallyP2
     break if $remainingP2 == 0 && $tallyP1 > $tallyP2
     @human.call_or_raise(3, $name1)
-    @computer.computer_fold_or_call(4, computer)  
+    @computer.computer_fold_or_call(4, $name2)    
   end
 end
 
 setup_purse()
 get_mode()
-
-
-
