@@ -21,47 +21,51 @@ INFO
   end
 
   def purse(p_num)
-    if p_num == 1 || p_num == 3
+    if p_num.odd?
       @purse = $purseP1
-    elsif p_num == 2 || p_num == 4
+    elsif p_num.even?
       @purse = $purseP2
     end
     @keepers = []
     @remaining = 5 - @keepers.length
     @tally = 0
+    @bet = 0
     @bet_once_after_last_dice = 0
     $the_bet = 0
     $remainingP1 = 5
     $remainingP2 = 5
     $tallyP1 = 0
     $tallyP2 = 0
-    $ratioCPU = @remaining + @tally
+    $ratioP1 = @remaining + @tally
+    $ratioP2 = @remaining + @tally
   end
 
   def roll(p_num, p_name)
+    $the_bet = 0
+    @bet = 0
     @remaining = 5 - @keepers.length
     if @remaining == 0
       check_for_a_winner(p_num, p_name)
       if p_num < 4
         puts " \s #{p_name}, it looks like you've picked all five so you're done rolling"
-      elsif p_num == 4
+      elsif p_num >= 4
         puts "The Computer, picked all five so its done rolling"
       end
     elsif @remaining >= 1
       if @remaining == 1
         if p_num < 4
           puts "\n", "#{p_name}, it's your last roll make it a good one!  ---  Hit (ENTER) to Roll"
-        elsif p_num == 4
+        elsif p_num >= 4
           puts "\n", "Hit <ENTER> to let the computer take its last turn"
         end
       elsif @remaining > 1
         if p_num < 4
           puts "\n", "#{p_name} Hit <ENTER> to Roll" 
-        elsif p_num == 4
+        elsif p_num >= 4
           puts "\n", "Hit <ENTER> to let the computer take its turn"
         end
       end
-      STDIN.gets
+#      STDIN.gets
       $val = []
       @remaining = 5 - @keepers.length
       while $val.length < @remaining
@@ -140,7 +144,7 @@ ONE
     end
     if p_num < 4
       pick(p_num, p_name)
-    elsif p_num == 4
+    elsif p_num >= 4
       computer_pick(p_num, p_name)
     end
   end
@@ -256,38 +260,31 @@ ONE
       end
     end
     @remaining = 5 - @keepers.length
-    $ratioCPU = @remaining + @tally
+    if p_num.odd?
+      $ratioP1 = @remaining * 1.5 + @tally
+    elsif p_num.even?
+      $ratioP2 = @remaining * 1.5 + @tally
+    end
     report_choices(p_num, p_name)
   end
     
   def report_choices(p_num, p_name)
     @remaining = 5 - @keepers.length
+    update_purse(p_num)
     puts "\n"
     if p_num < 4 && @bet_once_after_last_dice == 0
       puts " \s #{p_name}, you kept #{@keepers}, making your total #{@tally}."
-    elsif p_num == 4 && @bet_once_after_last_dice == 0
-      puts " \s The Computer kept #{@keepers}, making its total #{@tally}."
+    elsif p_num >= 4 && @bet_once_after_last_dice == 0
+      puts " \s #{p_name} kept #{@keepers}, making its total #{@tally}."
     end
 
     if @remaining == 0 && @bet_once_after_last_dice >= 1
       @bet = 0
       $the_bet = 0
+      check_for_a_winner(p_num, p_name)
     elsif @remaining == 0 && @bet_once_after_last_dice == 0
       puts " \s That was the last dice!"
-    end
-    
-    if @remaining == 0
       check_for_a_winner(p_num, p_name)
-    end
-    
-    if p_num == 1 || p_num == 3
-      $purseP1 = @purse
-      $tallyP1 = @tally
-      $remainingP1 = 5 - @keepers.length
-    elsif p_num == 2 || p_num == 4
-      $purseP2 = @purse
-      $tallyP2 = @tally
-      $remainingP2 = 5 - @keepers.length
     end
   end
 
@@ -302,19 +299,16 @@ ONE
         puts " \s You can bet 0 if you'd like but you've got to enter something..."
       elsif @input =~ /[A-Za-z]+/
         puts " \s #{@input.upcase}, you want to bet #{@input.upcase}! Give me a break..."
-      elsif @bet > @purse
-        puts " \s No way pal, you've only got #{@purse} left"
-      elsif @bet > $purseP1 || @bet > $purseP2  
-        puts " \s That's more than your opponent has left, are you just trying to humiliate him?"
       elsif @bet < 0
         puts " \s Betting a negative number isn't going to fly..."
       elsif @bet < $the_bet
         puts " \s #{@input.upcase}! That's not enough to keep you in the game"
+      elsif @bet > @purse
+        puts " \s No way pal, you've only got #{@purse} left"
+      elsif @bet > $purseP1 || @bet > $purseP2 && @bet != $the_bet
+        puts " \s That's more than your opponent has left, are you just trying to humiliate him?"
       elsif @bet == $the_bet
         break
-        @purse -= @bet
-        $pot += @bet
-        $the_bet = @bet - $the_bet
         update_purse(p_num)
         remarks_for_calling(p_num)
       elsif @bet > $the_bet
@@ -366,9 +360,7 @@ ONE
         get_betting_input(p_num, p_name)
         
         if @bet >= 1
-          @purse -= @bet
-          $pot += @bet
-          $the_bet = @bet
+          update_purse(p_num)
           remarks_for_raising(p_num)
         end      
         
@@ -379,76 +371,73 @@ ONE
     end
   end
 
-  def computer_ahead()
-    if $ratioP1 - $ratioCPU >= 2.0  # Ahead by more than 2
+  def computer_ahead(p_num, p_name)
+    if $ratioP1 - $ratioP2 >= 2.0  # Ahead by more than 2
       if $purseP1 <= 7 || $purseP2 <= 7 || $the_bet > $purseP1
         if $purseP1 < $purseP2
-          @bet = $purseP1
-          puts "The computer is going for the throat!  It's putting you all in by betting #{@bet}"
+          @bet = $the_bet + $purseP1
+          puts "#{p_name} is going for the throat!  It's putting you all in by betting #{@bet}"
         elsif $purseP1 > $purseP2
-          @bet = $purseP2
-          puts "This is for the match people.....the Computer is ALL IN!!!!"
+          @bet = $the_bet + $purseP2
+          puts "This is for the match people..... #{p_name} is ALL IN!!!!"
         end
       elsif $purseP1 > 7
         @bet = $the_bet + 4 + rand(2)
-        computer_exude_confidence()
+        computer_exude_confidence(p_num, p_name)
       end
-    elsif $ratioP1 - $ratioCPU < 2.0 # Ahead by less than 2
+    elsif $ratioP1 - $ratioP2 < 2.0 # Ahead by less than 2
       if $purseP1 <= 3
-        @bet = $purseP1
-        puts "The computer is going for the throat!  It's putting you all in by betting #{@bet}"
+        @bet = $the_bet + $purseP1
+        puts "#{p_name} is going for the throat!  It's putting you all in by betting #{@bet}"
       elsif $purseP1 >= 3
         @bet = $the_bet + rand(2) + 1
-        computer_exude_caution()
+        computer_exude_caution(p_num, p_name)
       end
     end
   end
 
-  def computer_behind()
-    if $ratioCPU - $ratioP1 < 2.0
+  def computer_behind(p_num, p_name)
+    if $ratioP2 - $ratioP1 < 2.0
       if $purseP1 <= 3
-        @bet = $purseP1
-        puts "The computer is going for the throat!  It's putting you all in by betting #{@bet} "
+        @bet = $the_bet + $purseP1
+        puts "#{p_name} is going for the throat!  It's putting you all in by betting #{@bet} "
       elsif $purseP1 >= 3
         @bet = $the_bet
-        computer_exude_caution()
+        computer_exude_caution(p_num, p_name)
       end
-    elsif $ratioCPU - $ratioP1 >= 2.0
+    elsif $ratioP2 - $ratioP1 >= 2.0
       @bet = $the_bet
       if @bet == 0
-        puts "The computer thinks you have the edge... it's passing on betting"
+        puts "#{p_name} thinks you have the edge... it's passing on betting"
       elsif @bet > 0
         @bet = $the_bet
-        computer_exude_caution()
+        computer_exude_caution(p_num, p_name)
       end
     end
   end
 
-  def computer_exude_confidence()
+  def computer_exude_confidence(p_num, p_name)
     random = rand(3)
     if random == 0
-      puts "The Computer doesn't think you've got what it takes... it put in #{@bet}"
+      puts "#{p_name} doesn't think you've got what it takes... it put in #{@bet}"
     elsif random == 1
-      puts "Mr. Computer wants to see how easily you break... it put in #{@bet}"
+      puts "#{p_name} wants to see how easily you break... it put in #{@bet}"
     elsif random == 2
-      puts "The Computer thinks he can scare you off by betting #{@bet}"
+      puts "#{p_name} thinks he can scare you off by betting #{@bet}"
+    elsif random == 2
+      puts "#{p_name} wants to see what your made of... it bet #{@bet}"
     end
   end
   
-  def computer_exude_caution()
+  def computer_exude_caution(p_num, p_name)
     random = rand(3)
     if random == 0
-      puts "The computer thinks it's an even match... it put in #{@bet}"
+      puts "#{p_name} thinks it's an even match... it put in #{@bet}"
     elsif random == 1
-      puts "The computer is just bidding it's time... it put in #{@bet}"
+      puts "#{p_name} is just bidding it's time... it put in #{@bet}"
     elsif random == 2
-      puts "Mr. computer ain't in no hurry... it put in #{@bet}"
+      puts "#{p_name} ain't in no hurry... it put in #{@bet}"
     end
-  end
-  
-  def computer_tied()
-    @bet = 0 + rand(3)
-    puts "The computer thinks it's an even match... it put in #{@bet}"
   end
 
   def computer_get_first_bet(p_num, p_name)
@@ -458,18 +447,13 @@ ONE
     elsif $purseP1 == 0 || $purseP2 == 0
       puts " \s Looks like your opponent is all in, so we'll skip betting"
     elsif @purse > 0      
-      if $ratioP1 > $ratioCPU
-        computer_ahead()
-      elsif $ratioP1 < $ratioCPU 
-        computer_behind()
-      else
-        computer_tied()
+      if $ratioP1 > $ratioP2
+        computer_ahead(p_num, p_name)
+      elsif $ratioP1 <= $ratioP2 
+        computer_behind(p_num, p_name)
       end
-      @purse -= @bet
-      $pot += @bet
-      $the_bet = @bet
+      update_purse(p_num)
     end
-    
   end
 
   def run_down(p_num, p_name)
@@ -494,39 +478,39 @@ ONE
       elsif @bet == $the_bet
         remarks_for_calling(p_num)
       end
-      @purse -= @bet
-      $pot += @bet
-      $the_bet = @bet - $the_bet
+      update_purse(p_num)
     end
   end 
 
   def computer_call_or_raise(p_num, p_name)
     if $the_bet > 0
       puts "\n"
-      if $ratioCPU - $ratioP1 >= 7.0
+      if $ratioP2 - $ratioP1 >= 7.0
         fold(p_num, p_name)
-      elsif $ratioP1 >= $ratioCPU
-        computer_ahead()
-      elsif $ratioP1 < $ratioCPU 
-        computer_behind()
-      else
-        computer_tied()
+      elsif $ratioP1 >= $ratioP2
+        computer_ahead(p_num, p_name)
+      elsif $ratioP1 < $ratioP2 
+        computer_behind(p_num, p_name)
       end
-      @purse -= @bet
-      $pot += @bet
-      $the_bet = @bet - $the_bet
+      update_purse(p_num)
     end
   end
   
   def fold_or_call(p_num, p_name)
+    puts "  def fold_or_call(p_num, p_name)"
+    puts "\t $the_bet = #{$the_bet}"
     if $the_bet > 0
       @remaining = (5 - @keepers.length)
       get_betting_input(p_num, p_name)
+      
       if @bet > $the_bet
-        puts " \s Sorry, you already had your turn to raise"
-        puts " \s You can put #{$the_bet} or 'fold'"
-        fold_or_call(p_num, p_name)
+        @bet = $the_bet
+        puts " \s Sorry, you already had your turn to raise..."
+        puts " \s We'll just put you in for #{@bet} since that's most you can bet until next turn"
+      elsif @bet == $the_bet
+        remarks_for_calling(p_num)
       end
+      update_purse(p_num)
     end
   end
 
@@ -534,15 +518,13 @@ ONE
     puts "\n"
     if $purseP1 > 0 && $purseP2 > 0
       if $the_bet > 0
-        if $ratioP1 > $ratioCPU || $ratioCPU - $ratioP1 < 7
+        if $ratioP1 > $ratioP2 || $ratioP2 - $ratioP1 < 7
           @bet = $the_bet
-          puts "\n", "The Computer called your bet of #{@bet}", "\n"
-        elsif $ratioCPU - $ratioP1 >= 7    
+          puts "\n", "#{p_name} called your bet of #{@bet}", "\n"
+        elsif $ratioP2 - $ratioP1 >= 7    
           fold(p_num, p_name)
         end
-        @purse -= @bet
-        $pot += @bet
-        $the_bet = @bet
+        update_purse(p_num)
       end
     end
   end
@@ -559,7 +541,7 @@ ONE
       $purseP2 = @purse
       $purseP2 += $pot
       puts " \s #{$name2} you WON!!!!!"
-    elsif p_num == 2 || p_num == 4
+    elsif p_num == 2 || p_num >= 4
       $purseP1 = @purse
       $purseP1 += $pot
       puts " \s #{$name1} you WON!!!!!"
@@ -568,11 +550,16 @@ ONE
   end
 
   def update_purse(p_num)
-    if p_num == 1 || p_num == 3
+
+    @purse -= @bet
+    $pot += @bet
+    $the_bet = @bet - $the_bet
+    
+    if p_num.odd?
       $purseP1 = @purse
       $tallyP1 = @tally
       $remainingP1 = 5 - @keepers.length
-    elsif p_num == 2 || p_num == 4
+    elsif p_num.even?
       $purseP2 = @purse
       $tallyP2 = @tally
       $remainingP2 = 5 - @keepers.length
@@ -580,20 +567,22 @@ ONE
   end
 
   def check_for_a_winner(p_num, p_name)
-    # puts "  def check_for_a_winner(p_num, p_name)"
-    # puts "\t p_name = #{p_name}"
-    # puts "\t $remainingP1 #{$remainingP1}"
-    # puts "\t $remainingP2 #{$remainingP2} "
-    # puts "\t $tallyP1 #{$tallyP1}"
-    # puts "\t $tallyP2 #{$tallyP2}"
-    # puts "\t the pot = #{$pot}"
-    # puts "\t @purse = #{@purse}"
-    # puts "\t $purseP1 = #{$purseP1}"
-    # puts "\t $purseP2 = #{$purseP2}"
-    # puts "\t player 1 ratio is #{$ratioP1}"
-    # puts "\t computer's ratio is #{$ratioCPU}"
-    update_purse(p_num)
-
+    
+    puts "\s def update_purse(p_num)"
+    puts "\t p_num = #{p_num}"
+    puts "\t $remainingP1 #{$remainingP1}"
+    puts "\t $remainingP2 #{$remainingP2} "
+    puts "\t $tallyP1 #{$tallyP1}"
+    puts "\t $tallyP2 #{$tallyP2}"
+    puts "\t the pot = #{$pot}"
+    puts "\t @bet = #{@bet}"
+    puts "\t $the_bet = #{$the_bet}"
+    puts "\t @purse = #{@purse}"
+    puts "\t $purseP1 = #{$purseP1}"
+    puts "\t $purseP2 = #{$purseP2}"
+    puts "\t player 1 ratio is #{$ratioP1}"
+    puts "\t plater 2 ratio is #{$ratioP2}"
+    
     if @remaining == 0    
       if @tally == 30
         puts " \s I do not believe this...... "
@@ -607,10 +596,12 @@ ONE
       elsif $remainingP1 == 0 && $tallyP1 < $tallyP2
         $purseP1 = @purse
         $purseP1 += $pot
+        $pot = 0
         check_if_bankrupt(p_num, $name1)
       elsif $remainingP2 == 0 && $tallyP1 > $tallyP2
         $purseP2 = @purse
         $purseP2 += $pot
+        $pot = 0
         check_if_bankrupt(p_num, $name2)
       end
     end
@@ -628,18 +619,17 @@ ONE
   end
   
   def want_to_play_again(p_num)
-    puts "Want to play again? (y/n)"
+    
+    puts "Want to play again? Hit <ENTER> or type 'quit'"
     input = gets.chomp
-    if input == "y" && p_num <= 2
-      play_2_player_game()
-    elsif input == "y" && p_num >= 3
-      vs_computer_game()
-    elsif input == "n"
+
+    if input == "quit"
       puts "Later!"
-      Process.exit!(0)
-    else
-      puts "I didn't understand"
-      want_to_play_again(p_num)
+      Process.exit!(0)    
+    elsif p_num <= 2
+      play_2_player_game()
+    elsif p_num >= 3
+      play_2_computer_game()
     end
   end
 end
@@ -647,16 +637,17 @@ end
 def get_mode()
   puts "Do you want to play (1) player or (2) player mode?"
   # input = gets.chomp
-  input = '1'
-  if input == '1'
+  input = '0'
+  if input == '0'
+    play_2_computer_game()
+  elsif input == '1'
     puts "Type in your name(s) and you can join the game"
     # get_name_1()
-    $name2 = "Computer"
+    # get_name_2()
     vs_computer_game()
   elsif input == '2'
-    get_name_1()
-    get_name_2()
-    setup_purse()
+    # get_name_1()
+    # get_name_2()
     play_2_player_game()
   else
     puts "I didn't understand"
@@ -689,6 +680,7 @@ $name2 = "Andrew"
 def setup_purse()
   $purseP1 = 30
   $purseP2 = 30
+  $pot = 0
 end
 
 def play_2_player_game()
@@ -699,7 +691,6 @@ def play_2_player_game()
   @second_player.purse(2)
   # @second_player.get_name(2)
   
-  $pot = 0
   $the_bet = 0
   $tallyP1 = 0
   $tallyP2 = 0
@@ -738,7 +729,6 @@ def vs_computer_game()
   @human.purse(3)
   @computer = DiceGame.new
   @computer.purse(4)
-  $pot = 0
   $the_bet = 0
   
   while true
@@ -753,6 +743,30 @@ def vs_computer_game()
     @computer.computer_get_first_bet(4, $name2)
     @human.call_or_raise(3, $name1)
     @computer.computer_fold_or_call(4, $name2)    
+  end
+end
+
+def play_2_computer_game()
+  $name1 = "r2d2"
+  $name2 = "hal"
+  @hal = DiceGame.new
+  @hal.purse(5)
+  @r2d2 = DiceGame.new
+  @r2d2.purse(4)
+  $the_bet = 0
+  
+  while true
+    @hal.roll(5, $name1) # roll > show > pick > report
+    @r2d2.check_for_a_winner(4, $name2)
+    @hal.computer_get_first_bet(5, $name1)
+    @r2d2.computer_call_or_raise(4, $name2)  
+    @hal.computer_fold_or_call(5, $name1)
+    
+    @r2d2.roll(4, $name2) # roll > show > pick >report
+    @hal.check_for_a_winner(5, $name1)
+    @r2d2.computer_get_first_bet(4, $name2)
+    @hal.computer_call_or_raise(5, $name1)
+    @r2d2.computer_fold_or_call(4, $name2)    
   end
 end
 
