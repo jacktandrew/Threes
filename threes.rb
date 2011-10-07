@@ -20,44 +20,47 @@ INFO
     STDIN.gets
   end
 
-  def purse(p_num)
-    if p_num.odd?
-      @purse = $purseP1
-    elsif p_num.even?
-      @purse = $purseP2
-    end
+  def variables(p_num)
     @keepers = []
     @remaining = 5 - @keepers.length
-    @tally = 0
     @bet = 0
     @bet_once_after_last_dice = 0
-    @ratio = 0
+    @ratio = 7
     @foe_ratio = 0
     @foe_purse = 0
     $the_bet = 0
-    $remainingP1 = 5
-    $remainingP2 = 5
-    $tallyP1 = 0
-    $tallyP2 = 0
-    $ratioP1 = 7
-    $ratioP2 = 7
+    purse(p_num)
+    tally(p_num)
+  end
+  
+  def tally(p_num)
+    @tally = 0
+  end
+  
+  def purse(p_num)
+    if p_num.odd?
+      @purse = $purseP1
+      @foe_purse = $purseP2
+    elsif p_num.even?
+      @purse = $purseP2
+      @foe_purse = $purseP1
+    end
+    return @purse
   end
   
   def anti_up(p_num, p_name)
     print "anti up #{p_name}... \t"
     @purse -= 1
-    if p_num.odd?
-      $purseP1 -= 1
-    elsif p_num.even?
-      $purseP2 -= 1
-    end
     $pot += 1
   end
 
-  def roll(p_num, p_name)
-    $the_bet = 0
-    @bet = 0
+  def remaining(p_num)
     @remaining = 5 - @keepers.length
+  end
+
+  def roll(p_num, p_name)
+    @bet = 0
+    remaining(p_num)
     if @remaining == 0
       check_for_a_winner(p_num, p_name)
       if p_num < 4
@@ -80,11 +83,11 @@ INFO
         end
       end
      # STDIN.gets
-      $val = []
+      @val = []
       @remaining = 5 - @keepers.length
-      while $val.length < @remaining
+      while @val.length < @remaining
         r = rand(6) + 1
-        $val.push(r)
+        @val.push(r)
       end
       show(p_num, p_name)    
     end
@@ -92,7 +95,7 @@ INFO
 
   def show(p_num, p_name)
     num = 1
-    $val.each do |v|
+    @val.each do |v|
     six = <<SIX
                              _______
                             |  o  o |
@@ -196,24 +199,10 @@ ONE
               puts "#{@in_digit} wasn't available to you so we just excluded it..."
             else            
               @in_digit -= 1
-              value = $val[@in_digit]
+              value = @val[@in_digit]
               @keepers.push(value)
-              if value == 3
-                value = 0
-                if p_num == 1
-                  $remainingP1 -= 1
-                elsif p_num == 2
-                  $remainingP2 -= 1
-                end
-              else
+              if value != 3
                 @tally += value
-                if p_num == 1
-                  $tallyP1 += value
-                  $remainingP1 -= 1
-                elsif p_num == 2
-                  $tallyP2 += value
-                  $remainingP2 -= 1
-                end
               end # value == 3
             end # if remaining
           end # for loop
@@ -221,57 +210,30 @@ ONE
         end
       end
     end
-    @remaining = 5 - @keepers.length
-    $ratioP1 = @remaining + @tally
+    ratio(p_num)
     report_choices(p_num, p_name)
+  end
+
+  def ratio(p_num)
+    @ratio = @remaining * 2 + @tally
   end
 
   def computer_pick(p_num, p_name)
     picked = 0
-    $val.each do |value|
+    @val.each do |value|
       if value == 1 || value == 3
         @keepers.push(value)
         picked += 1
-        if value == 3
-          value = 0
-          if p_num == 1
-            $remainingP1 -= 1
-          elsif p_num == 2
-            $remainingP2 -= 1
-          end
-        else
+        if value != 3
           @tally += value
-          if p_num == 1
-            $tallyP1 += value
-            $remainingP1 -= 1
-          elsif p_num == 2
-            $tallyP2 += value
-            $remainingP2 -= 1
-          end
         end
       end
     end
 
     if picked == 0
-      value = $val.sort.slice(0)
+      value = @val.sort.slice(0)
       @keepers.push(value)      
-      if value == 3
-        value = 0
-        if p_num == 1
-          $remainingP1 -= 1
-        elsif p_num == 2
-          $remainingP2 -= 1
-        end
-      else
-        @tally += value
-        if p_num == 1
-          $tallyP1 += value
-          $remainingP1 -= 1
-        elsif p_num == 2
-          $tallyP2 += value
-          $remainingP2 -= 1
-        end
-      end
+      @tally += value
     end
     report_choices(p_num, p_name)
   end
@@ -288,7 +250,6 @@ ONE
 
     if @remaining == 0 && @bet_once_after_last_dice >= 1
       @bet = 0
-      $the_bet = 0
       check_for_a_winner(p_num, p_name)
     elsif @remaining == 0 && @bet_once_after_last_dice == 0
       puts " \s That was the last dice!"
@@ -313,7 +274,7 @@ ONE
         puts " \s #{@input.upcase}! That's not enough to keep you in the game"
       elsif @bet > @purse
         puts " \s No way pal, you've only got #{@purse} left"
-      elsif @bet > $purseP1 || @bet > $purseP2 && @bet != $the_bet
+      elsif @bet > @purse || @bet > @foe_purse && @bet != $the_bet
         puts " \s That's more than your opponent has left, are you just trying to humiliate him?"
       elsif @bet == $the_bet
         break
@@ -362,7 +323,7 @@ ONE
     if @bet_once_after_last_dice == 0
       if @purse == 0
         puts " \s Looks like your all in, so we'll skip betting"
-      elsif $purseP1 == 0 || $purseP2 == 0
+      elsif @purse == 0 || @foe_purse == 0
         puts " \s Looks like your opponent is all in, so we'll skip betting"
       elsif @purse > 0
         get_betting_input(p_num, p_name)
@@ -384,7 +345,7 @@ ONE
     puts "\n"
     if @purse == 0
       puts " \s Looks like your all in, so we'll skip betting"
-    elsif $purseP1 == 0 || $purseP2 == 0
+    elsif @foe_purse == 0
       puts " \s Looks like your opponent is all in, so we'll skip betting"
     elsif @purse > 0
       computer_determine_lead(p_num, p_name)
@@ -394,20 +355,24 @@ ONE
 
   def computer_determine_lead(p_num, p_name)
     # puts " computer_determine_lead(p_num, p_name)"
+    puts "#{$name1} $purseP1 #{$purseP1}"
+    puts "#{$name2} $purseP2 #{$purseP2}"
     puts "Should be 100 = #{$purseP1 + $purseP2 + $pot}"
-    @ratio = @remaining * 2 + @tally
+    puts "$pot #{$pot}"
+    puts "ratio = #{@ratio}"
+    puts "foe_ratio = #{@foe_ratio}"
+
+    ratio(p_num)
     
-    if p_num.odd?
-      $ratioP1 = @ratio
-      @foe_purse = $purseP2
-      @foe_ratio = $ratioP2
-      @foe_remaining = $remainingP2
-    elsif p_num.even?
-      $ratioP2 = @ratio
-      @foe_purse = $purseP1
-      @foe_ratio = $ratioP1
-      @foe_remaining = $remainingP1
-    end
+    # if p_num.odd?
+    #   @foe_purse = second_player.purse
+    #   @foe_ratio = second_player.ratio
+    #   @foe_remaining = second_player.remaining
+    # elsif p_num.even?
+    #   @foe_purse = first_player.purse
+    #   @foe_ratio = first_player.ratio
+    #   @foe_remaining = first_player.remaining
+    # end
 
     # puts "ratio = #{@ratio}"
     # puts "foe_ratio = #{@foe_ratio}"
@@ -495,7 +460,7 @@ ONE
   end
 
   def run_down(p_num, p_name)
-    if @purse > 0 && @purse != 30 && $the_bet > 0
+    if @purse > 0 && @purse != 50 && $the_bet > 0
     puts "\n", "Ok #{p_name}, here's the run down
 
     <> The initial bet stands at #{$the_bet}
@@ -509,7 +474,7 @@ ONE
 
   def call_or_raise(p_num, p_name)
     if $the_bet > 0
-      @remaining = (5 - @keepers.length)
+      remaining(p_num)
       get_betting_input(p_num, p_name)
       if @bet > $the_bet
         remarks_for_raising(p_num)
@@ -574,15 +539,12 @@ ONE
   def fold(p_num, p_name)
     puts "#{p_name} folded and so lost the game", "\n"
     if p_num.odd?
-      # $purseP2 = @purse
       $purseP2 += $pot
       puts " \s #{$name2} you WON!!!!! and took home a pot of #{$pot}"
     elsif p_num.even?
-      # $purseP1 = @purse
       $purseP1 += $pot
       puts " \s #{$name1} you WON!!!!! and took home a pot of #{$pot}"
     end
-    $pot = 0
     want_to_play_again(p_num)
   end
 
@@ -592,12 +554,8 @@ ONE
     $the_bet = @bet - $the_bet
     if p_num.odd?
       $purseP1 = @purse
-      $tallyP1 = @tally
-      $remainingP1 = 5 - @keepers.length
     elsif p_num.even?
       $purseP2 = @purse
-      $tallyP2 = @tally
-      $remainingP2 = 5 - @keepers.length
     end
   end
 
@@ -610,33 +568,27 @@ ONE
     # puts "$purseP2 #{$purseP2}"
     # puts "$pot #{$pot}"
     # puts "Should be 100 = #{$purseP1 + $purseP2 + $pot}"
-    
-    if @remaining == 0    
-      if @tally == 30
-        puts " \s I do not believe this...... "
-        puts " \s #{p_name}, you 'Shot The MOON'......"
-        puts " \s and secured yourself the win! "
-        check_if_bankrupt(p_num, p_name)
-      elsif $remainingP1 == 0 && $remainingP2 == 0 && $tallyP1 == $tallyP2
-        puts " \s I do not believe this...... you TIED!!!!!"
-        puts " \s The money will stay in the pot for next time!"
-        want_to_play_again(p_num)
-      elsif $remainingP1 == 0 && $tallyP1 < $tallyP2
-        $purseP1 = @purse
-        $purseP1 += $pot
-        $pot = 0
-        check_if_bankrupt(p_num, $name1)
-      elsif $remainingP2 == 0 && $tallyP1 > $tallyP2
-        $purseP2 = @purse
-        $purseP2 += $pot
-        $pot = 0
-        check_if_bankrupt(p_num, $name2)
-      end
+ 
+    if @tally == 30
+      puts " \s I do not believe this...... "
+      puts " \s #{p_name}, you 'Shot The MOON'......"
+      puts " \s and secured yourself the win! "
+      check_if_bankrupt(p_num, p_name)
+    elsif $remainingP1 == 0 && $remainingP2 == 0 && $tallyP1 == $tallyP2
+      puts " \s I do not believe this...... you TIED!!!!!"
+      puts " \s The money will stay in the pot for next time!"
+      want_to_play_again(p_num)
+    elsif @remaining == 0 && @tally < @foe_tally
+      $purseP1 += $pot
+      check_if_bankrupt(p_num, $name1)
+    elsif $remainingP2 == 0 && $tallyP1 > $tallyP2
+      $purseP2 += $pot
+      check_if_bankrupt(p_num, $name2)
     end
   end
   
   def check_if_bankrupt(p_num, p_name)
-    if @purse == 60 || @purse == 0
+    if @purse == 100 || @purse == 0
       puts " \s #{p_name} you bankrupted your opponent and are the overall CHAMPION!"
       Process.exit!(0)
     else
@@ -650,27 +602,32 @@ ONE
     puts "Want to play again? Hit <ENTER> or type 'quit'"
     
     puts "@purse #{@purse}"
-    puts "$purseP1 #{$purseP1}"
-    puts "$purseP2 #{$purseP2}"
+    puts "#{$name1} $purseP1 #{$purseP1}"
+    puts "#{$name2} $purseP2 #{$purseP2}"
     puts "Should be 100 = #{$purseP1 + $purseP2 + $pot}"
     puts "$pot #{$pot}"
     
-    input = gets.chomp
-    if input == "quit"
-      puts "Later!"
-      Process.exit!(0)    
-    elsif p_num <= 2
-      play_2_player_game()
-    elsif p_num >= 3
-      play_2_computer_game()
-    end
+    
+    # input = gets.chomp
+    # if input == "quit"
+    #   puts "Later!"
+    #   Process.exit!(0)    
+    # elsif p_num <= 2
+    #   play_2_player_game()
+    # elsif p_num >= 3
+    #   play_2_computer_game()
+    # end
+    
+    play_2_computer_game()
   end
 end
 
 def get_mode()
   puts "Do you want to play (1) player or (2) player mode?"
   # input = gets.chomp
-  input = '0'
+  input = '1'
+  $name1 = "Jack"
+  $name2 = "Andrew"
   if input == '0'
     play_2_computer_game()
   elsif input == '1'
@@ -694,10 +651,8 @@ def get_name_1()
   if $name1.length == 0 
     puts "I didn't catch that can you repeat it"
     get_name_1()
-  else
   end
 end
-$name1 = "Jack"
 
 def get_name_2()
   print "Player 2 > "
@@ -705,10 +660,8 @@ def get_name_2()
   if $name2.length == 0
     puts "I didn't catch that can you repeat it"
     get_name_2()
-  else
   end
 end
-$name2 = "Andrew"
 
 def setup_purse()
   $purseP1 = 50
@@ -725,17 +678,10 @@ def play_2_player_game()
   # @second_player.get_name(2)
   
   $the_bet = 0
-  $tallyP1 = 0
-  $tallyP2 = 0
-  $remainingP1 = 5
-  $remainingP2 = 5
   
   while true
     @first_player.roll(1, $name1) # roll > show > pick
     @first_player.report_choices(1, $name1) # report > get_first_bet
-    # break if $remainingP1 == 0 && $remainingP2 == 0
-    # break if $remainingP1 == 0 && $tallyP1 < $tallyP2
-    # break if $remainingP2 == 0 && $tallyP1 > $tallyP2
     @first_player.check_for_a_winner(1, $name1)
     # @first_player.get_first_bet(1)
     @second_player.run_down(2, $name2)
@@ -745,9 +691,6 @@ def play_2_player_game()
   
     @second_player.roll(2, $name2) # roll > show > pick
     @second_player.report_choices(2, $name2) # report > get_first_bet
-    # break if $remainingP1 == 0 && $remainingP2 == 0
-    # break if $remainingP1 == 0 && $tallyP1 < $tallyP2
-    # break if $remainingP2 == 0 && $tallyP1 > $tallyP2
     @second_player.check_for_a_winner(2, $name2)
     # @second_player.get_first_bet(2)
     @first_player.run_down(1, $name1)
@@ -758,50 +701,65 @@ def play_2_player_game()
 end
 
 def vs_computer_game()
-  @human = DiceGame.new
-  @human.purse(3)
-  @computer = DiceGame.new
-  @computer.purse(4)
-  $the_bet = 0
+  first_player = DiceGame.new
+  first_player.variables(3)
+  first_player.anti_up(3, $name1)
+  second_player = DiceGame.new
+  second_player.variables(4)
+  second_player.anti_up(4, $name2)
   
   while true
-    @human.roll(3, $name1) # roll > show > pick > report
-    @computer.check_for_a_winner(4, $name2)
-    @human.get_first_bet(3, $name1)
-    @computer.computer_call_or_raise(4, $name2)  
-    @human.fold_or_call(3, $name1)
+    p_num = 4
+    $purseP2 = second_player.purse(p_num)
+    @foe_tally = second_player.tally(p_num)
+    @foe_purse = second_player.purse(p_num)
+    @foe_ratio = second_player.ratio(p_num)
+    @foe_remaining = second_player.remaining(p_num)
+
+    first_player.roll(3, $name1) # roll > show > pick > report
+    # second_player.check_for_a_winner(4, $name2)
+    first_player.get_first_bet(3, $name1)
+    second_player.computer_call_or_raise(4, $name2)  
+    first_player.fold_or_call(3, $name1)
+
+    p_num = 3
+    $purseP1 = first_player.purse(p_num)
+    @foe_tally = first_player.tally(p_num)
+    @foe_purse = first_player.purse(p_num)
+    @foe_ratio = first_player.ratio(p_num)
+    @foe_remaining = first_player.remaining(p_num)
     
-    @computer.roll(4, $name2) # roll > show > pick >report
-    @human.check_for_a_winner(3, $name1)
-    @computer.computer_get_first_bet(4, $name2)
-    @human.call_or_raise(3, $name1)
-    @computer.computer_fold_or_call(4, $name2)    
+    second_player.roll(4, $name2) # roll > show > pick >report
+    # first_player.check_for_a_winner(3, $name1)
+    second_player.computer_get_first_bet(4, $name2)
+    first_player.call_or_raise(3, $name1)
+    second_player.computer_fold_or_call(4, $name2)    
   end
 end
 
 def play_2_computer_game()
   $name1 = "r2d2"
   $name2 = "hal"
-  @hal = DiceGame.new
-  @hal.purse(5)
-  @hal.anti_up(5, $name1)
-  @r2d2 = DiceGame.new
-  @r2d2.purse(4)
-  @r2d2.anti_up(4, $name2)
-  $the_bet = 0
+  first_player = DiceGame.new
+  first_player.variables(5)
+  first_player.anti_up(5, $name1)
+  second_player = DiceGame.new
+  second_player.purse(4)
+  second_player.variables(4)
+  second_player.anti_up(4, $name2)
   
   while true
-    @hal.roll(5, $name1) # roll > show > pick > report
-    @r2d2.check_for_a_winner(4, $name2)
-    @hal.computer_get_first_bet(5, $name1)
-    @r2d2.computer_call_or_raise(4, $name2)  
-    @hal.computer_fold_or_call(5, $name1)
+    first_player.roll(5, $name1) # roll > show > pick > report
+    second_player.check_for_a_winner(4, $name2)
+    first_player.computer_get_first_bet(5, $name1)
+    second_player.computer_call_or_raise(4, $name2)  
+    first_player.computer_fold_or_call(5, $name1)
     
-    @r2d2.roll(4, $name2) # roll > show > pick >report
-    @hal.check_for_a_winner(5, $name1)
-    @r2d2.computer_get_first_bet(4, $name2)
-    @hal.computer_call_or_raise(5, $name1)
-    @r2d2.computer_fold_or_call(4, $name2)    
+    second_player.roll(4, $name2) # roll > show > pick >report
+    first_player.check_for_a_winner(5, $name1)
+    second_player.computer_get_first_bet(4, $name2)
+    first_player.computer_call_or_raise(5, $name1)
+    second_player.computer_fold_or_call(4, $name2)    
   end
 end
 
