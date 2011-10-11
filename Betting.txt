@@ -1,0 +1,141 @@
+# if first player has dice remaining....
+# first player rolls > selects dice
+#   first player can?
+#   
+#   if first player has money in his purse
+#   (1) bets an ammount of money > second player turn to bet 
+# 
+#         second player can?
+#         (1) fold > start over
+#         
+#         if second player has money in his purse
+#         (2) raise_ > first player turn to bets
+#               
+#               first player can?
+#               (1) fold > start over
+#               (2) call > second player turn to roll
+#                   
+#         (3) call > second player turn to roll
+# 
+#   (2) pass on betting  
+#   
+#   if second player has dice remaining...
+#   second player rolls > selects dice 
+#       second player can?
+# 
+#       if second player has money in his purse
+#       (1) bets an ammount of money > first player turn to bet 
+# 
+#             first player can?
+#             (1) fold > start over
+#             
+#             if first player has money in his purse
+#             (2) raise_ > second player turn to bets
+# 
+#                   second player can?
+#                   (1) fold > start over
+#                   (2) call > first player turn to roll
+# 
+#             (3) call > first player turn to roll
+# 
+#       (2) pass on betting > first player rolls
+
+
+#######################################################################
+
+
+
+
+
+
+
+
+
+
+elsif @purse > 0      
+  if $ratioP1 > $ratioCPU
+    if $ratioP1 - $ratioCPU >= 2.0
+      @bet = 4 + rand(2)
+      puts "The computer thinks he's got a edge on you... it put in #{@bet}"
+    elsif $ratioP1 - $ratioCPU < 2.0
+      @bet = 1 + rand(1)
+      puts "The computer thinks it's an even match... it put in #{@bet}"
+    end
+  elsif $ratioP1 < $ratioCPU 
+    if $ratioCPU - $ratioP1 < 2.0
+      @bet = 1 + rand(1)
+      puts "The computer thinks it's an even match... it put in #{@bet}"
+    elsif $ratioCPU - $ratioP1 >= 2.0
+      @bet = 0
+      puts "The computer thinks you have the edge... it passed on betting"
+    end
+  end
+  @purse -= @bet
+  $pot += @bet
+  $the_bet = @bet
+  puts "\n", "The Computer bet #{@bet}", "\n"
+end
+
+
+
+elsif $the_bet > 0 
+
+if $ratioP1 > $ratioCPU
+  if ($ratioP1 - $ratioCPU) >= 2.0
+    @bet = $the_bet + 4 + rand(2)
+    puts "\n", "The Computer thinks it's got an edge, it puts in #{@bet} you'll need to put in #{@bet - $the_bet} more to stay in", "\n"
+    @purse -= @bet
+    $pot += @bet
+    $the_bet = @bet - $the_bet
+  elsif ($ratioP1 - $ratioCPU) < 2.0
+    @bet = $the_bet
+    puts "\n", "The Computer called your bet of #{@bet}", "\n"
+    @purse -= @bet
+    $pot += @bet
+    $the_bet = @bet - $the_bet
+  end
+elsif $the_bet > 0 && $ratioP1 < $ratioCPU 
+  if ($ratioCPU - $ratioP1) <= 2.0
+    @bet = $the_bet
+    puts "\n", "The Computer called your bet of #{@bet}", "\n"
+    @purse -= @bet
+    $pot += @bet
+    $the_bet = @bet - $the_bet
+  elsif ($ratioCPU - $ratioP1) > 2.0
+    @input == 'fold'
+    check_for_a_winner(p_num, p_name)
+  end
+end    
+
+
+
+if $the_bet > 0
+  if $ratioP1 > $ratioCPU           # Player one is behind
+    @bet = $the_bet
+    puts "\n", "The Computer called your bet of #{@bet}", "\n"
+  elsif $ratioP1 < $ratioCPU        # Player one is ahead
+    if $ratioCPU - $ratioP1 >= 3    
+      @input == 'fold'
+      check_for_a_winner(p_num, p_name)
+    elsif $ratioCPU - $ratioP1 < 3
+      @bet = $the_bet
+      puts "\n", "The Computer called your bet of #{@bet}", "\n"
+    end
+  end
+  @purse -= @bet
+  $pot += @bet
+  $the_bet = @bet
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
