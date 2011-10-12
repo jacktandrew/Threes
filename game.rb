@@ -3,9 +3,8 @@ class Game
     @players = players
     @ante = 1
     @pot = 0
-    @bet = 0
-    @the_bet = 0
-    @players_done = 0
+    @total_players_done = 0
+    @total_players_done = 0
     @game_over == false
     @players.each do |player|
       player.init_temp_vars()
@@ -25,7 +24,7 @@ class Game
     end
   end
     
-  def play_game()  
+  def play_game()
     @players.each do |player|
       next if player.has_folded?() == true
       if player.remaining > 0
@@ -36,52 +35,45 @@ class Game
         if player.purse == 0
           puts " \s Looks like you're all in, so we'll skip betting"
         else
-          first_bet(player)
-          take_bets(player)
-          call_or_fold(player)
+          
+          @players.each do |player|
+            player.reset_can_raise
+            player.push_bet(0)
+            @highest_bet = 0
+            @bet = 0
+          end
+          
+          if @players.length - @total_players_done > 0
+            take_bets(player)
+          
+            2.times do
+              @players.each do |player|
+                next if player.has_folded?() == true
+                next if player.bet == @highest_bet
+                take_bets(player)
+              end
+            end
+          end
         end
       else
         puts "\n", " \s #{player.name}, picked all five and is done rolling"
         @total_players_done += 1
-        
-        if @players_done == @players.length
+        if @total_players_done == @players.length
           @game_over = true
           check_for_a_winner()
         end
       end
     end
     
-    while @game_over == false
+    while @total_players_done != @players.length
       play_game()
     end
   end
   
-  def first_bet(player)
+  def take_bets(player)
     bet_input(player)
     transfer_funds(player)
     player.push_bet(@bet)
-  end
-  
-  def take_bets(player)
-    @players.each do |player|
-      if player.bet < @the_bet
-        bet_input(player)
-        transfer_funds(player)
-        player.push_bet(@bet)
-      end
-      puts "#{player.name} is in for #{@bet}"
-    end
-  end
-  
-  def call_or_fold(player)
-    @players.each do |player|
-      if player.bet < @the_bet
-        call_or_fold_input(player)
-        transfer_funds(player)
-        player.push_bet(@bet)
-      end
-      puts "#{player.name} is in for #{@bet}"
-    end
   end
   
   def help
@@ -240,54 +232,37 @@ ONE
   end
 
   def bet_input(player)
-    print "\n", "#{player.name}, the bet stands at #{@the_bet - player.bet} you have #{player.purse} in the purse, what's your bet?  "
+    print "\n", "#{player.name}, the bet stands at #{@highest_bet - player.bet} you have #{player.purse} in the purse, what's your bet?  "
     @input = gets.chomp
-    @bet = @input.to_i
+    @bet = @input.to_i    
     quit_fold_help?(player)
     
-    if @input == '0'
-      puts "Ok, that's fine... No shame is betting 0... well maybe a little shame"
-    elsif @bet < @the_bet - player.bet
+    if @bet < @highest_bet - player.bet
       if @input.empty?
         puts "\n", " \s You can bet 0 if you'd like but you've got to enter something..."
       elsif @input =~ /[A-Za-z]+/
         puts "\n", " \s #{@input.upcase}, you want to bet #{@input.upcase}! Give me a break..."
-      elsif @bet < @the_bet
+      elsif @bet < @highest_bet
         puts "\n", " \s #{@input.upcase}, are you kiddin me! That's not enough to keep you in the game"
       elsif @bet > player.purse
         puts "\n", " \s No way pal, you've only got #{player.purse} left"
       end
       bet_input(player)
-    elsif @bet >= @the_bet - player.bet
-      comment_on_bet(player)
-    end
-  end
-
-  def call_or_fold_input(player)
-    print "\n", "#{player.name}, it's #{@the_bet - player.bet} to call and you have #{player.purse} in the purse, will you call or 'fold'? "
-    @input = gets.chomp
-    @bet = @input.to_i
-    quit_fold_help?(player)
-    
-    if @input == '0'
-      puts "It's call or 'fold'.  0 isn't an option! The bet stands at #{@the_bet - player.bet}"
-    elsif @bet < @the_bet - player.bet
-      if @input.empty?
-        puts "\n", " \s It's call or 'fold'... you've got to enter something..."
-      elsif @input =~ /[A-Za-z]+/
-        puts "\n", " \s #{@input.upcase}, you want to bet #{@input.upcase}! Give me a break..."
-      elsif @bet < @the_bet
-        puts "\n", " \s #{@input.upcase}, are you kiddin me! That's not enough to keep you in the game"
-      elsif @bet > player.purse
-        puts "\n", " \s No way pal, you've only got #{player.purse} left"
-      end
-      call_or_fold_input(player)
-    elsif @bet == @the_bet - player.bet
+    elsif @input == '0'
+      puts "\n", " \s Ok, that's fine... No shame is betting 0... well maybe a little shame"
+    elsif @bet == @highest_bet - player.bet
       remarks_for_calling(player)
-    elsif @bet > @the_bet - player.bet
-      puts "\n", " \s You already had your chance to raise!  Either call #{@the_bet - player.bet} or 'fold'"
-      call_or_fold_input(player)
+    elsif @bet > @highest_bet - player.bet
+      if player.can_raise? == true
+        remarks_for_raising(player)
+        @highest_bet = @bet
+        puts "\n", " \s #{player.name} is now our bet leader"        
+      elsif player.can_raise? == false
+        puts "\n", " \s you already had your chance to raise, you can call or 'fold'"
+        bet_input(player)
+      end
     end
+    player.cannot_raise_again
   end
 
   def remarks_for_raising(player)
@@ -327,17 +302,6 @@ ONE
   def transfer_funds(player)
     player.pull_from_purse(@bet)
     @pot += @bet
-    if @bet > @the_bet
-      @the_bet = @bet
-    end
-  end
-
-  def comment_on_bet(player)
-    if @bet == @the_bet
-      remarks_for_calling(player)
-    elsif @bet > @the_bet
-      remarks_for_raising(player)
-    end
   end
 
   def run_down()
@@ -355,6 +319,7 @@ ONE
   def check_for_a_winner()
     scores = []
     winners = []
+    co_winners = []
     @players.each do |player|
       if player.tally == 30
         puts " \s I do not believe this...... "
@@ -362,21 +327,50 @@ ONE
         puts " \s and secured yourself the win! "
         winners.push(player)
       else
-        scores.push[ player.tally, player ]
+        scores.push([ player.tally, player ])
       end
     end
     
     in_order = scores.sort
-    winner = in_order.slice!(0)
-    co_winners.push(winner.last)
+    winners = in_order.slice!(0)
+    co_winners.push(winners.last)
     
     in_order.each do |score|
-      if winner.first == score.first
+      if winners.first == score.first
         co_winners.push(score.last)
       end
     end
-    puts "and the winner is........   #{winning_player.name}"
-    winning_player.put_into_purse(@pot)
+    
+    if co_winners.length == 1
+      puts "and the winner is........   #{co_winners[0].name}"
+      co_winners[0].put_into_purse(@pot)
+    else
+      co_winners.each do |winner|
+        print "#{winner.last.name} you are tied for the win"
+        winner.last.put_into_purse(@pot / co_winners.length)
+      end
+    end
+    
   end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

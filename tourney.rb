@@ -31,8 +31,8 @@ class Tourney
 #      name_input()
 #      @players.push(Player.new(@name))
        @players.push(Player.new('Jack'))     # Hard Code for testing 
-       @players.push(Player.new('Trevor'))   # Hard Code for testing
-       @players.push(Player.new('Andrew'))   # Hard Code for testing
+       @players.push(Player.new('Priame'))   # Hard Code for testing
+#      @players.push(Player.new('Andrew'))   # Hard Code for testing
 #    end
   end
 

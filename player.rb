@@ -16,7 +16,7 @@ class Player
   end
   
   def push_bet(bet)
-    @bet += bet
+    @bet = bet
   end
   
   def bet()
@@ -67,6 +67,18 @@ class Player
   
   def push_tally(value)
     @tally += value
+  end
+
+  def can_raise?()
+    @can_raise
+  end
+
+  def reset_can_raise()
+    @can_raise = true
+  end
+  
+  def cannot_raise_again()
+    @can_raise = false
   end
   
   def ante_up?(ante)
