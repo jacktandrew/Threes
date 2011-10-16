@@ -34,6 +34,7 @@ class Game
   def play_game()
     @players.each do |player|
       next if player.has_folded? == true
+      break if @@keep_going == false
       if player.remaining > 0 && @@keep_going == true
         roll(player)
         show()
@@ -241,10 +242,9 @@ ONE
   end
 
   def bet_input(player)
-    puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~#{@@highest_bet}~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     print "\n", "#{player.name}, the bet stands at #{@@highest_bet - player.bet} you have #{player.purse} in the purse, what's your bet?  "
     @input = gets.chomp
-    @bet = @input.to_i
+    @bet = @input.to_i + player.bet
     
     if @input =~ /(help|info|intro)/
       help()
@@ -255,7 +255,7 @@ ONE
     elsif @input =~ /[^0-9]+/              # Regexp = everything except numbers
       puts "\n", " \s #{@input.upcase}, you want to bet #{@input.upcase}! Give me a break..."
       bet_input(player)
-    elsif @bet < @@highest_bet - player.bet
+    elsif @bet < @@highest_bet
       puts "\n", " \s #{@input.upcase}, are you kiddin me! You need to put #{@@highest_bet - player.bet} to keep you in the game"
       bet_input(player)
     elsif @bet > player.purse
@@ -266,7 +266,7 @@ ONE
       bet_input(player)
     elsif @input == '0'
       puts "\n", " \s Ok, that's fine... No shame is betting 0... well maybe a little shame"
-    elsif @bet == @@highest_bet - player.bet
+    elsif @bet == @@highest_bet
       remarks_for_calling(player)
     elsif @bet > @@highest_bet
       if player.can_raise? == true
@@ -379,13 +379,10 @@ ONE
     in_order = scores.sort
     winner = in_order.slice!(0)  
 
-    puts "in order #{in_order}"
-    puts "winner #{winner}"
-
     if winner.last.remaining == 0  # player.remaining
       in_order.each do |score|
         if winner.first == score.first  #player.tally
-          co_winners.push(score.last.name)   # player.name
+          co_winners.push(score.last)   
         end
       end
 
@@ -393,18 +390,17 @@ ONE
         puts "With a score of #{winner.first}........ the winner is........   #{winner.last.name}"
         winner.last.put_into_purse(@pot)
         @pot = 0
-        puts "winner.last.purse #{winner.last.purse}"
+        puts "winner.purse #{winner.last.purse}"
         @@keep_going = false
       else
-        co_winners.each do |winner|
-          print "#{winner.last.name} you are tied for the win"
-          winner.last.put_into_purse(@pot / co_winners.length)
+        co_winners.each do |co_winner|
+          print "#{co_winner.name} you are tied for the win"
+          co_winner.put_into_purse(@pot / co_winners.length)
           @pot = 0
           @@keep_going = false
         end
       end
     end   
-  
   end   # def check_for_a_winner
 end   # class Game
 
