@@ -14,20 +14,32 @@ class Player
   def is_human?()
     @human
   end
-
+  
+  def bet()
+    @player_bet
+  end
+  
   def has_folded?
     @folded
   end
-
+  
   def fold_em()
     puts "\n", " \s #{@name} folded and is out of the game", "\n"
     @folded = true
   end
-
+  
   def purse()
     @purse
   end
-
+  
+  def push_player_bet(bet)
+    @player_bet += bet
+  end
+  
+  def reset_player_bet()
+    @player_bet = 0
+  end
+  
   def pull_from_purse(bet)
     @purse -= bet
   end

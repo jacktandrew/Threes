@@ -65,6 +65,7 @@ class Game
   def take_bets(player)
     @players.each do |player|       # Loops the players reseting all the variables
       player.reset_can_raise        
+      player.reset_player_bet()     
       @@highest_bet = 0
       @bet = 0
     end
@@ -72,17 +73,12 @@ class Game
     if @players.length - @@total_players_done >= 1      # To start betting
       bet_input(player)                               # At least 2 players need                                                # to have be still playing
       transfer_funds(player)
-    puts "~~~~~~~~~~~~~~~~~~highest #{@@highest_bet}~~~~~~~bet #{@bet}~~~~~~~~~~~~~~~~~~~~~~~~"
-      2.times do
-        puts "2.times do"
-        @players.each do |p|
-          puts "p.name#{p.name}"
-          puts "~~~~~~~~~~~~~~~~~~highest #{@@highest_bet}~~~~~~~bet #{@bet}~~~~~~~~~~~~~~~~~~~~~~~~"
-
-          next if p.has_folded? == true
-          next if @bet >= @@highest_bet
-          bet_input(p)
-          transfer_funds(p)
+      @players.length.times do
+        @players.each do |player|
+          next if player.has_folded? == true
+          next if player.bet >= @@highest_bet
+          bet_input(player)
+          transfer_funds(player)
         end
       end
     else
@@ -245,10 +241,10 @@ ONE
   end
 
   def bet_input(player)
-
-    print "\n", "#{player.name}, the bet stands at #{@@highest_bet - @bet} you have #{player.purse} in the purse, what's your bet?  "
+    puts "~~~~~~~~~~~~~~~~~~~~~~~~~~~#{@@highest_bet}~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print "\n", "#{player.name}, the bet stands at #{@@highest_bet - player.bet} you have #{player.purse} in the purse, what's your bet?  "
     @input = gets.chomp
-    @bet = @input.to_i + @bet
+    @bet = @input.to_i
     
     if @input =~ /(help|info|intro)/
       help()
@@ -259,7 +255,7 @@ ONE
     elsif @input =~ /[^0-9]+/              # Regexp = everything except numbers
       puts "\n", " \s #{@input.upcase}, you want to bet #{@input.upcase}! Give me a break..."
       bet_input(player)
-    elsif @bet < @@highest_bet - @bet
+    elsif @bet < @@highest_bet - player.bet
       puts "\n", " \s #{@input.upcase}, are you kiddin me! You need to put #{@@highest_bet - player.bet} to keep you in the game"
       bet_input(player)
     elsif @bet > player.purse
@@ -270,7 +266,7 @@ ONE
       bet_input(player)
     elsif @input == '0'
       puts "\n", " \s Ok, that's fine... No shame is betting 0... well maybe a little shame"
-    elsif @bet == @@highest_bet - @bet
+    elsif @bet == @@highest_bet - player.bet
       remarks_for_calling(player)
     elsif @bet > @@highest_bet
       if player.can_raise? == true
@@ -323,8 +319,10 @@ ONE
   end
 
   def transfer_funds(player)
+    player.push_player_bet(@bet)
     player.pull_from_purse(@bet)
     @pot += @bet
+    @bet = 0
   end
 
   def run_down()
