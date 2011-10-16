@@ -1,12 +1,12 @@
 class Game
   def initialize(players)
-    @players = players
+    @all_players = players
+    @players = []
     @ante = 1
     @pot = 0
-    @total_players_done = 0
-    @total_players_done = 0
-    @game_over == false
-    @players.each do |player|
+    @@keep_going = true
+    @@total_players_done = 0
+    @all_players.each do |player|
       player.init_temp_vars()
     end
     check_ante()
@@ -15,65 +15,79 @@ class Game
   
   def check_ante()
     # ante up
-    @players = @players.select do |player|
+    @ante_counter = 0
+    @players = @all_players.select do |player|
       did_ante = player.ante_up?(@ante) 
-      if did_ante == true 
+      if did_ante == true
+        @ante_counter += 1
         @pot += @ante
       end
       did_ante
+    end
+    
+    if @ante_counter < 2
+      puts "\n", " \s Not enough players anted up"
+      save_game?()
     end
   end
     
   def play_game()
     @players.each do |player|
-      next if player.has_folded?() == true
-      if player.remaining > 0
+      next if player.has_folded? == true
+      if player.remaining > 0 && @@keep_going == true
         roll(player)
         show()
         pick_input(player)
+        next if player.has_folded? == true
         report_choices(player)
+        
+        if player.remaining == 0
+          @@total_players_done += 1
+        end
+        
         if player.purse == 0
           puts " \s Looks like you're all in, so we'll skip betting"
-        else
-          
-          @players.each do |player|
-            player.reset_can_raise
-            player.push_bet(0)
-            @highest_bet = 0
-            @bet = 0
-          end
-          
-          if @players.length - @total_players_done > 0
-            take_bets(player)
-          
-            2.times do
-              @players.each do |player|
-                next if player.has_folded?() == true
-                next if player.bet == @highest_bet
-                take_bets(player)
-              end
-            end
-          end
+        elsif 
+          take_bets(player)
         end
       else
-        puts "\n", " \s #{player.name}, picked all five and is done rolling"
-        @total_players_done += 1
-        if @total_players_done == @players.length
-          @game_over = true
-          check_for_a_winner()
-        end
+        puts "\n", " \s #{player.name} is done rolling..."
+        check_for_a_winner()
       end
     end
-    
-    while @total_players_done != @players.length
+
+    while true
+      break if @@keep_going == false
       play_game()
     end
   end
   
   def take_bets(player)
-    bet_input(player)
-    transfer_funds(player)
-    player.push_bet(@bet)
+    @players.each do |player|       # Loops the players reseting all the variables
+      player.reset_can_raise        
+      @@highest_bet = 0
+      @bet = 0
+    end
+    
+    if @players.length - @@total_players_done >= 1      # To start betting
+      bet_input(player)                               # At least 2 players need                                                # to have be still playing
+      transfer_funds(player)
+    puts "~~~~~~~~~~~~~~~~~~highest #{@@highest_bet}~~~~~~~bet #{@bet}~~~~~~~~~~~~~~~~~~~~~~~~"
+      2.times do
+        puts "2.times do"
+        @players.each do |p|
+          puts "p.name#{p.name}"
+          puts "~~~~~~~~~~~~~~~~~~highest #{@@highest_bet}~~~~~~~bet #{@bet}~~~~~~~~~~~~~~~~~~~~~~~~"
+
+          next if p.has_folded? == true
+          next if @bet >= @@highest_bet
+          bet_input(p)
+          transfer_funds(p)
+        end
+      end
+    else
+      check_for_a_winner()
+    end
   end
   
   def help
@@ -82,10 +96,9 @@ class Game
   The game is called "Threes."  
   The goal is to have the lowest total
   You start by rolling 5 dice,
-  you put 1 or more aside,
-  you roll the remaining dice.
+  then put 1 or more aside.
+  Players can bet each turn.
   Repeat until you have no dice.
-  Players can beat each turn.
   
   The catch, is 3 is worth 0!
   As well you can "Shoot the Moon!"
@@ -101,7 +114,7 @@ INFO
     if player.remaining == 1
       puts "\n", " \s #{player.name}, last roll make it a good one!  ---  Hit <ENTER> to Roll"
     elsif player.remaining > 1
-      puts "\n", " \s #{player.name}, Hit <ENTER> to Roll" 
+      puts "\n", " \t \t #{player.name}, Hit <ENTER> to Roll" 
     end
 
     STDIN.gets
@@ -183,8 +196,14 @@ ONE
   def pick_input(player)
     print "\n", "Which ones do you wanna keep? "
     @input = gets.chomp
-    quit_fold_help?(player)
-    if @input =~ /[1-5]+/
+     
+    if @input =~ /(help|info|intro)/
+      help()
+      pick_input(player)
+    elsif @input =~ /(fold|quit|out|done)/
+      @@total_players_done += 1
+      player.fold_em()
+    elsif @input =~ /[1-5]+/
       array = @input.split('')
       array = array.delete_if {|x| x < '1' || x > '5' }   # deletes letters as well
       @input_array = array.uniq
@@ -194,22 +213,18 @@ ONE
       pick_input(player)
     end
   end
-  
-  def quit_fold_help?(player)
-    if @input == 'quit'
-      quit(player)
-    elsif @input == 'fold'
-      player.fold_em()
-      @input = 1
-    elsif @input == 'help'
-      intro()
-    end
-  end
-  
+
   def pick(player)
     @input_array.each do |inp|
       digit = inp.to_i 
-      if digit <= @val.length     # Check for number < 5 but > the number of options
+      if digit > @val.length
+        if @input_array.length == 1
+          puts "\n", " \s #{digit} wasn't available to you try again..."
+          pick_input(player)
+        else @input_array.length > 1
+          puts "#{digit} wasn't available to you so we excluded it from your choices"
+        end
+      elsif digit <= @val.length     # Check for number < 5 but > the number of options
         digit -= 1                # Changes the human number to zero indexed number
         value = @val[digit]       # Pulls the digit out by index number
         player.push_keepers(value)
@@ -218,45 +233,49 @@ ONE
         else
           player.push_tally(value)
         end # value == 3
-      elsif digit > @val.length
-        puts "#{@in_digit} wasn't available to you so we just excluded it..."
       end
     end # for loop
   end
 
   def report_choices(player)
+    puts "\n", " \s #{player.name}, kept #{player.keepers}, for a total of #{player.tally}."
     if player.remaining == 0 && @times_bet_after_last_dice == 0
       puts "\n", " \s That was the last dice!"
     end
-    puts "\n", " \s #{player.name}, kept #{player.keepers}, for a total of #{player.tally}."
   end
 
   def bet_input(player)
-    print "\n", "#{player.name}, the bet stands at #{@highest_bet - player.bet} you have #{player.purse} in the purse, what's your bet?  "
+
+    print "\n", "#{player.name}, the bet stands at #{@@highest_bet - @bet} you have #{player.purse} in the purse, what's your bet?  "
     @input = gets.chomp
-    @bet = @input.to_i    
-    quit_fold_help?(player)
+    @bet = @input.to_i + @bet
     
-    if @bet < @highest_bet - player.bet
-      if @input.empty?
-        puts "\n", " \s You can bet 0 if you'd like but you've got to enter something..."
-      elsif @input =~ /[A-Za-z]+/
-        puts "\n", " \s #{@input.upcase}, you want to bet #{@input.upcase}! Give me a break..."
-      elsif @bet < @highest_bet
-        puts "\n", " \s #{@input.upcase}, are you kiddin me! That's not enough to keep you in the game"
-      elsif @bet > player.purse
-        puts "\n", " \s No way pal, you've only got #{player.purse} left"
-      end
+    if @input =~ /(help|info|intro)/
+      help()
+      bet_input(player)
+    elsif @input =~ /(fold|quit|out|done)/
+      @@total_players_done += 1
+      player.fold_em()
+    elsif @input =~ /[^0-9]+/              # Regexp = everything except numbers
+      puts "\n", " \s #{@input.upcase}, you want to bet #{@input.upcase}! Give me a break..."
+      bet_input(player)
+    elsif @bet < @@highest_bet - @bet
+      puts "\n", " \s #{@input.upcase}, are you kiddin me! You need to put #{@@highest_bet - player.bet} to keep you in the game"
+      bet_input(player)
+    elsif @bet > player.purse
+      puts "\n", " \s No way pal, you've only got #{player.purse} left"
+      bet_input(player)
+    elsif @input.empty?
+      puts "\n", " \s You can bet 0 if you'd like but you've got to enter something..."
       bet_input(player)
     elsif @input == '0'
       puts "\n", " \s Ok, that's fine... No shame is betting 0... well maybe a little shame"
-    elsif @bet == @highest_bet - player.bet
+    elsif @bet == @@highest_bet - @bet
       remarks_for_calling(player)
-    elsif @bet > @highest_bet - player.bet
+    elsif @bet > @@highest_bet
       if player.can_raise? == true
+        @@highest_bet = @bet
         remarks_for_raising(player)
-        @highest_bet = @bet
-        puts "\n", " \s #{player.name} is now our bet leader"        
       elsif player.can_raise? == false
         puts "\n", " \s you already had your chance to raise, you can call or 'fold'"
         bet_input(player)
@@ -287,15 +306,19 @@ ONE
 
   def remarks_for_calling(player)
     puts "\n"
-    random = rand(4)
-    if random == 0
-      puts " \s Ok, that's all you need to stay in"
-    elsif random == 1
-      puts " \s Conservative play but your hanging in"
-    elsif random == 2
-      puts " \s I see your not scared off that easily"
-    elsif random == 3
-      puts " \s Glad to see you're still in the game"
+    if @bet == player.purse
+      puts " \s Going all in, that takes balls!"
+    else
+      random = rand(4)
+      if random == 0
+        puts " \s Ok, that's all you need to stay in"
+      elsif random == 1
+        puts " \s Conservative play but your hanging in"
+      elsif random == 2
+        puts " \s I see your not scared off that easily"
+      elsif random == 3
+        puts " \s Glad to see you're still in the game"
+      end
     end
   end
 
@@ -313,46 +336,79 @@ ONE
 
   def quit(player)
     puts "#{player.name}, you lacked the courage to keep fighting... GAME OVER" 
+    save_game?()
+  end
+  
+  def save_game?()
+    print "\n", "Do you want to quit and save the standings so you can come back to it later? (Y/n)"     
+    want_to_save = gets.chomp
+    if want_to_save == 'n'
+      puts "ok, your results were erased"
+    else
+
+      print "\n", " \s Type in a name to remember your game by > "
+      filename = gets.chomp
+      filename = filename + ".rb"          
+
+      folder = Dir.chdir('saved')                 # Directory is changed to the 'results' directory
+      target = File.open(filename, 'w')           # A file is created in the results folder
+      
+      target.write(@all_players)
+      
+      target.close()                                        
+      puts "ok, your results were saved"
+    end
     Process.exit!(0)
   end
 
   def check_for_a_winner()
     scores = []
-    winners = []
+    in_order = []
+    winner = []
     co_winners = []
+    
     @players.each do |player|
       if player.tally == 30
         puts " \s I do not believe this...... "
         puts " \s #{player.name}, you 'Shot The MOON'......"
         puts " \s and secured yourself the win! "
-        winners.push(player)
+        winner = [ player.tally, player ]
       else
-        scores.push([ player.tally, player ])
+        scores.push([ player.tally, player.name, player ])
       end
     end
-    
+
     in_order = scores.sort
-    winners = in_order.slice!(0)
-    co_winners.push(winners.last)
-    
-    in_order.each do |score|
-      if winners.first == score.first
-        co_winners.push(score.last)
+    winner = in_order.slice!(0)  
+
+    puts "in order #{in_order}"
+    puts "winner #{winner}"
+
+    if winner.last.remaining == 0  # player.remaining
+      in_order.each do |score|
+        if winner.first == score.first  #player.tally
+          co_winners.push(score.last.name)   # player.name
+        end
       end
-    end
-    
-    if co_winners.length == 1
-      puts "and the winner is........   #{co_winners[0].name}"
-      co_winners[0].put_into_purse(@pot)
-    else
-      co_winners.each do |winner|
-        print "#{winner.last.name} you are tied for the win"
-        winner.last.put_into_purse(@pot / co_winners.length)
+
+      if co_winners.length == 0
+        puts "With a score of #{winner.first}........ the winner is........   #{winner.last.name}"
+        winner.last.put_into_purse(@pot)
+        @pot = 0
+        puts "winner.last.purse #{winner.last.purse}"
+        @@keep_going = false
+      else
+        co_winners.each do |winner|
+          print "#{winner.last.name} you are tied for the win"
+          winner.last.put_into_purse(@pot / co_winners.length)
+          @pot = 0
+          @@keep_going = false
+        end
       end
-    end
-    
-  end
-end
+    end   
+  
+  end   # def check_for_a_winner
+end   # class Game
 
 
 

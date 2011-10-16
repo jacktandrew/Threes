@@ -30,12 +30,16 @@ class Tourney
 #      puts "Enter the name of player #{counter + 1}"
 #      name_input()
 #      @players.push(Player.new(@name))
-       @players.push(Player.new('Jack'))     # Hard Code for testing 
-       @players.push(Player.new('Priame'))   # Hard Code for testing
-#      @players.push(Player.new('Andrew'))   # Hard Code for testing
+       @players.push(Player.new('Ling Bawi'))     # Hard Code for testing 
+       @players.push(Player.new('Jack'))   # Hard Code for testing
+       @players.push(Player.new('Andrew'))   # Hard Code for testing
 #    end
   end
 
+  def all_the_players
+    @players
+  end
+    
   def create_game()
     @game = Game.new(@players)
   end
@@ -47,7 +51,7 @@ class Tourney
     end
     taunts()
   end
-
+      
   def tourney_over?()
     @players.select { |p| p.purse == 0 }.length == @players.length - 1
     # All the players with zero in the purse are selected

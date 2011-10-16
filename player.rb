@@ -4,7 +4,7 @@ class Player
     @name = name
     @human = true # human || false
     @purse = 50   # purse || 50
-    @bet = 0
+    @player_bet = 0
   end
 
   def name()
@@ -14,28 +14,20 @@ class Player
   def is_human?()
     @human
   end
-  
-  def push_bet(bet)
-    @bet = bet
-  end
-  
-  def bet()
-    @bet
-  end
-  
+
   def has_folded?
     @folded
   end
-  
+
   def fold_em()
-    puts "#{@name} folded and is out of the game", "\n"
+    puts "\n", " \s #{@name} folded and is out of the game", "\n"
     @folded = true
   end
-  
+
   def purse()
     @purse
   end
-  
+
   def pull_from_purse(bet)
     @purse -= bet
   end
