@@ -1,18 +1,13 @@
 
 class Player
-  def initialize(name)
+  def initialize(name, purse)
     @name = name
-    @human = true # human || false
-    @purse = 50   # purse || 50
+    @purse = purse
     @player_bet = 0
   end
 
   def name()
     @name
-  end
-
-  def is_human?()
-    @human
   end
   
   def bet()
@@ -26,6 +21,9 @@ class Player
   def fold_em()
     puts "\n", " \s #{@name} folded and is out of the game", "\n"
     @folded = true
+    @keepers  = [7,7,7,7,7]
+    @tally = 35
+    @remaining = 0
   end
   
   def purse()
@@ -51,6 +49,7 @@ class Player
   def init_temp_vars()
     @keepers = []
     @tally = 0
+    @folded = false
   end
 
   def keepers()
@@ -91,21 +90,12 @@ class Player
       return false
     end
     
-    if @human == true
-      puts "\n", "#{@name} the ante is #{ante} this round, are you in? [Y/n]"
-      input = gets.chomp
-      if input == 'n'
-        return false
-      else
-        return anteing(ante)
-      end
-    elsif @human == false
-      random = rand(10)
-      if random == 1
-        return false
-      else
-        return anteing(ante)
-      end
+    puts "\n", "#{@name} the ante is #{ante} this round, are you in? [Y/n]"
+    input = gets.chomp
+    if input == 'n'
+      return false
+    else
+      return anteing(ante)
     end
   end
   
