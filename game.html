@@ -1,0 +1,264 @@
+<head>
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js" /></script>
+<style>
+  * {margin: 0px; padding: 0px; text-decoration: none; font-family: helvetica;}
+  body {margin: 10px;}
+  .red {background: gray; opacity: .5;}
+  .green {background: yellow;}
+  .stats .keepers .die, .unavailable {opacity: .2; pointer-events: none; cursor: default;}
+  .keepers, .score, .remaining {border: 1px solid black;}
+  #outer, #left_col, #right_col {float: left;}
+  #left_col, #right_col { height: 310px; padding: 10px;}
+  
+  #outer {height: 330px; width: 340px;}
+  #inner {height: 210px; padding: 10px;}
+  #inner h1 {text-align: center; margin-top: 50px;}
+  
+  #new_game, #roll, #endTurn {width: 340px; height: 50px; font-size: 22px;}
+  #new_game {margin: 30px 0 0 -10px;}
+
+  .stats .score, .stats .keepers, .stats .remaining {height: 25px; width: 30px; margin: 5px; padding: 10px;}
+  .stats .score, .stats .keepers, .stats .remaining {margin-top: 5px; text-align: center; font-size: 18px;}
+  .stats h5 {text-align: center;}
+  .stats .keepers {height: 200px; padding: 0px 10px;}
+  .stats .keepers .die {margin-left: -5px;}
+  .remaining {display: none;}
+  .selected {background: yellow;}
+
+  .die {height: 30px; width: 35px; border-radius: 7px; border: 2px solid black; position: relative; 
+    margin-top: 5px; font-size: 0px;}
+  .die div {border-radius: 5px; height: 8px; width: 9px; background: #333; position: absolute;}
+
+  .die[rel="3"] {margin-left: 10px;}
+  .die[rel="1"] {margin-left: 60px;}
+  .die[rel="2"] {margin-left: 110px;}
+  .die[rel="4"] {margin-left: 160px;}
+  .die[rel="5"] {margin-left: 210px;}
+  .die[rel="6"] {margin-left: 260px;}
+  
+  .die[rel="1"] div {top: 11px; left: 13px;}
+  
+  .die[rel="2"] div, .die[rel="4"] div {top: 5px; left: 6px;}
+  .die[rel="2"] div:last-child, .die[rel="4"] div:last-child {top: 17px; left: 20px;}
+  
+  .die[rel="3"] div, .die[rel="5"] div {top: 3px; left: 4px;}
+  .die[rel="3"] div:nth-child(1), .die[rel="5"] div:nth-child(2) {top: 11px; left: 13px;}
+  .die[rel="3"] div:last-child, .die[rel="5"] div:last-child {top: 19px; left: 22px;}
+  
+  .die[rel="4"] div:nth-child(1) {top: 5px; left: 20px;}
+  .die[rel="4"] div:nth-child(2) {top: 17px; left: 6px;}
+  
+  .die[rel="5"] div:nth-child(1) {top: 3px; left: 22px;}
+  .die[rel="5"] div:nth-child(3) {top: 19px; left: 4px;}
+  
+  .die[rel="6"] div {top: 1px; left: 4px;}
+  .die[rel="6"] div:nth-child(1) {top: 11px; left: 4px;}
+  .die[rel="6"] div:nth-child(2) {top: 21px; left: 4px;}
+  .die[rel="6"] div:nth-child(3) {top: 1px; left: 22px;}
+  .die[rel="6"] div:nth-child(4) {top: 11px; left: 22px;}
+  .die[rel="6"] div:nth-child(5) {top: 21px; left: 22px;}
+    
+</style>
+<script type="text/javascript">
+$(document).ready(function(){
+
+  var remaining = 5
+
+function game(){  
+
+  total = parseInt($('.green .score').html())
+  remaining = parseInt($('.green .remaining').html())
+  
+//     $('.die').live('click', function(){
+   $('.die').click(function(){
+    
+    if($(this).hasClass('selected')){
+      $(this).removeClass('selected');
+      if($('.selected').length === 0){
+        $('#endTurn').addClass('unavailable')
+      }
+      integer = parseInt($(this).html())
+      if(integer === 3){
+        integer = 0
+      }
+      total -= integer
+      $('.green .score').html(total)
+      remaining += 1
+      $('.green .remaining').html(remaining)
+    }else{
+      $(this).addClass('selected');
+      $('#endTurn').removeClass('unavailable');
+      integer = parseInt($(this).html())
+      if(integer === 3){
+        integer = 0
+      }
+      total += integer
+      $('.green .score').html(total)
+      remaining -= 1
+      $('.green .remaining').html(remaining)
+    }
+  });
+};
+
+  $('#roll').live('click', function(){
+//  $('#roll').click(function(){
+    remaining = parseInt($('.green .remaining').html())
+    $(this).addClass('unavailable')
+//    console.log('roll is unavailable')
+    var i = 0
+    html = ""
+    for (i = 0; i < remaining; i++) {
+      var randNum = Math.floor(Math.random()*6) + 1;
+      if(randNum === 1){
+        html += '<div class="die" rel="1">1<div></div></div>'
+      }
+
+      if(randNum === 2){
+        html += '<div class="die" rel="2">2<div></div><div></div></div>'
+      }
+
+      if(randNum === 3){
+        html += '<div class="die" rel="3">3<div></div><div></div><div></div></div>'
+      }
+
+      if(randNum === 4){
+        html += '<div class="die" rel="4">4<div></div><div></div><div></div><div></div></div>'
+      }
+
+      if(randNum === 5){
+        html += '<div class="die" rel="5">5<div></div><div></div><div></div><div></div><div></div></div>'
+      }
+
+      if(randNum === 6){
+        html += '<div class="die" rel="6">6<div></div><div></div><div></div><div></div><div></div><div></div></div>'
+      }
+      
+    }
+    $('#inner').html(html);
+    game();
+
+    
+  });
+  
+  
+  // $('.die').live('click', function(){
+  //   if($('.selected').length > 0){
+  //     $('#endTurn').removeClass('unavailable')
+  //   }else{
+  //     $('#endTurn').addClass('unavailable')
+  //   }
+  // });
+  
+  // var keepers = ""
+  
+  $('#endTurn').click(function(){
+    $(this).addClass('unavailable')
+    keepers = $('.selected')
+    
+    $('.green .keepers').append(keepers)
+    $('.die').removeClass('selected')
+    keepers = ""
+    $('#inner').html('');    
+    
+    if($('.green .remaining').html() === '0'){
+      if(parseInt($('.green .score').html()) < parseInt($('.red .score').html())){
+        $('#inner').html("<h1>" + $('.green h4').html() + " Wins</h1><button id='new_game'>New Game</button>")
+
+        // $('#roll').removeClass('unavailable').html('New Game').click(function(){
+        //   resetGame();
+        // });
+      }
+    }
+    
+    if($('.red .remaining').html() === '0'){
+      if(parseInt($('.red .score').html()) < parseInt($('.green .score').html())){
+        $('#inner').html("<h1>" + $('.red h4').html() + " Wins</h1><button id='new_game'>New Game</button>")
+        
+        // $('#roll').removeClass('unavailable').html('New Game').click(function(){
+        //   resetGame();
+        // });
+      }
+    }
+    
+    
+    
+    // function resetGame(){
+    //   $('#roll').html('Roll').removeClass('unavailable')
+    //   $('.red .score').html('0')
+    //   $('.red .keepers').html('')
+    //   $('.red .remaining').html('5')
+    //   
+    //   $('.green .score').html('0')
+    //   $('.green .keepers').html('')
+    //   $('.green .remaining').html('5')
+    // };
+    
+    if($('#new_game').length === 0){
+      $('#roll').removeClass('unavailable')
+    }else{
+      $('#new_game').click(function(){
+         location.reload();
+      });
+    }
+    
+    
+    
+    if($('.red .remaining').html() != '0'){
+      $('#left_col').toggleClass('green red')
+      $('#right_col').toggleClass('red green')
+    }
+  });
+});
+</script>
+</head>
+<body>
+
+
+  <div id="left_col" class="green">
+    <div id="p1" class="stats">
+      <h4>Player 1</h4>
+      
+      <h5>Score</h5>
+      <div class="score">0</div>
+      
+      <h5>Keepers</h5>
+      <div class="keepers"></div>
+
+      <!-- <h5>Remaining</h5> -->
+      <div class="remaining">5</div>
+    </div>
+  </div>
+  
+  <div id="outer">
+    <button id="roll">Roll</button>
+    <div id="inner"></div>
+    <button id="endTurn" class="unavailable">End Turn</button>
+  </div>
+
+  <div id="right_col" class="red">
+    <div id="p2" class="stats">
+      <h4>Player 2</h4>
+      
+      <h5>Score</h5>
+      <div class="score">0</div>
+
+      <h5>Keepers</h5>
+      <div class="keepers"></div>
+
+      <!-- <h5>Remaining</h5> -->
+      <div class="remaining">5</div>
+    </div>
+  </div>
+
+
+
+</body>
+
+
+
+<script>
+// if($('#p1 .remaining').html() === '5' && $('#p2 .remaining').html() === '5'){
+//   $('#left_col').addClass('green')
+//   $('#right_col').addClass('red')
+// }
+</script>
