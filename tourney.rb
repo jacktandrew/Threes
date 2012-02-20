@@ -1,6 +1,6 @@
 class Tourney
   def initialize()
-    setup_players()
+    how_many_input()
     create_game()
     play_it()
   end
@@ -8,65 +8,68 @@ class Tourney
   def open_game()
     puts "Which file would you like to open?"
 
-    folder = Dir.chdir('saved')                 # Directory is changed to the 'results' directory
-    # Dir.foreach(pathname) do |f|
-    #   puts "#{f}"
-    # end
+    folder = Dir.chdir('saved')        
     files = Array.new
     Dir.new(Dir.pwd).entries.each { |n| files.push(n) if File.file?(n) }
     puts files
     
     filename = gets.chomp
     # filename = filename + ".rb"
-    target = File.open(filename, 'r')           # A file is created in the results folder
-    @players = target
-    
-    @players.each do |player|
-      player.ante_up?
-    end
-    
+    target = File.open(filename, 'r')
+    saved_players = target.read
     target.close()
+    saved_array = saved_players.split("\n")
+    
+    saved_array.each do |saved|
+      array = saved.split("\s")
+      @players.push(Player.new(array[0], array[1].to_i))
+    end
+    puts @players
+    
+#    @players.each do |player|
+ #     player.ante_up?(1)
+  #  end
+    
+    
   end
   
   def how_many_input()
-    if @x < 2 
-      puts "I didn't catch that can you repeat it"
+    print "\n", "Enter the number player or 'open' > "
+    input = gets.chomp
+    @players = []
+    if input == 'open'
+      open_game()
+    elsif input =~ /\d+/
+      @x = input[/\d+/].to_i
+      setup_players()
+    else
+      puts "I didn't understand..."
       how_many_input()
     end
   end
   
   def name_input
-    @name = gets.chomp
-    if @name.length == 0
+    name = gets.chomp
+    if name =~ /\s+/
+      puts "sorry, your name can't have any spaces in it"
+      name_input()
+    elsif name.length >= 1
+      @name = name
+    else
       puts "I didn't catch that can you repeat it"
       name_input()
     end
   end
   
   def setup_players()
-    
-    puts "\n", "To start a new game type in how many players there are"
-    print "\n", "If you want to retreive a saved game type 'open' > "
-    input = gets.chomp
-    if input == 'open'
-      open_game()
-    elsif input =~ /\d+/
-      @x = input.to_i
-      how_many_input()
-    else
-      puts "I didn't understand..."
-      setup_players()
-    end
-    
-    @players = []
-#    @x.times do |counter|
-#      puts "Enter the name of player #{counter + 1}"
-#      name_input()
-#      @players.push(Player.new(@name))
+    @x.times do |counter|
+      puts "Enter the name of player #{counter + 1}"
+      name_input()
+      @players.push(Player.new(@name, 50))
        # @players.push(Player.new('Ling Bawi'))     # Hard Code for testing 
        # @players.push(Player.new('Jack'))   # Hard Code for testing
        # @players.push(Player.new('Andrew'))   # Hard Code for testing
-#    end
+    end
   end
 
   def all_the_players

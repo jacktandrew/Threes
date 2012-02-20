@@ -33,19 +33,22 @@ class Game
     
   def play_game()
     @players.each do |player|
-      next if player.has_folded? == true
+      if player.remaining == 0 || player.has_folded? == true 
+        @@total_players_done += 1
+        if @all_players.length - 1 <= @@total_players_done
+          check_for_a_winner()
+        end
+      end
+      
+      next if player.remaining == 0 || player.has_folded? == true
       break if @@keep_going == false
-      if player.remaining > 0 && @@keep_going == true
+      if @@keep_going == true
         roll(player)
         show()
         pick_input(player)
         next if player.has_folded? == true
         report_choices(player)
-        
-        if player.remaining == 0
-          @@total_players_done += 1
-        end
-        
+                
         if player.purse == 0
           puts " \s Looks like you're all in, so we'll skip betting"
         elsif 
@@ -58,6 +61,7 @@ class Game
     end
 
     while true
+      
       break if @@keep_going == false
       play_game()
     end
@@ -351,7 +355,9 @@ ONE
       folder = Dir.chdir('saved')                 # Directory is changed to the 'results' directory
       target = File.open(filename, 'w')           # A file is created in the results folder
       
-      target.write(@all_players)
+      @all_players.each do |player|
+        target.write(player.name + ' ' + player.purse.to_s + "\n" )
+      end
       
       target.close()                                        
       puts "ok, your results were saved"
@@ -394,7 +400,7 @@ ONE
         @@keep_going = false
       else
         co_winners.each do |co_winner|
-          print "#{co_winner.name} you are tied for the win"
+          puts " \s #{co_winner.name} you are tied for the win \s "
           co_winner.put_into_purse(@pot / co_winners.length)
           @pot = 0
           @@keep_going = false
