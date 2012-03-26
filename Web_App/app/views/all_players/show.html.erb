@@ -1,0 +1,20 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Name:</b>
+  <%= @all_player.name %>
+</p>
+
+<p>
+  <b>Password:</b>
+  <%= @all_player.password %>
+</p>
+
+<p>
+  <b>Purse:</b>
+  <%= @all_player.purse %>
+</p>
+
+
+<%= link_to 'Edit', edit_all_player_path(@all_player) %> |
+<%= link_to 'Back', all_players_path %>

@@ -1,0 +1,27 @@
+<h1>Listing all_players</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Password</th>
+    <th>Purse</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @all_players.each do |all_player| %>
+  <tr>
+    <td><%= all_player.name %></td>
+    <td><%= all_player.password %></td>
+    <td><%= all_player.purse %></td>
+    <td><%= link_to 'Show', all_player %></td>
+    <td><%= link_to 'Edit', edit_all_player_path(all_player) %></td>
+    <td><%= link_to 'Destroy', all_player, confirm: 'Are you sure?', method: :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New All player', new_all_player_path %>

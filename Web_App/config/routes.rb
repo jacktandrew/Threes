@@ -1,4 +1,6 @@
 WebApp::Application.routes.draw do
+  resources :all_players
+
   get "pages/home"
 
   get "pages/contact"
